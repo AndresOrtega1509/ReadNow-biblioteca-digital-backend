@@ -66,4 +66,7 @@ public class Usuario {
     @Column(name = "two_factor_activo")
     private Boolean twoFactorActivo;
 
+    @ManyToOne
+    @JoinColumn(name = "rol_id")
+    private Rol rol;
 }
