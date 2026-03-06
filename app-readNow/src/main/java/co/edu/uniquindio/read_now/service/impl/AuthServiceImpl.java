@@ -8,6 +8,7 @@ import co.edu.uniquindio.read_now.repository.IRolRepository;
 import co.edu.uniquindio.read_now.repository.IUsuarioRepository;
 import co.edu.uniquindio.read_now.security.JwtUtil;
 import co.edu.uniquindio.read_now.service.IAuthService;
+import co.edu.uniquindio.read_now.service.IEmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
