@@ -1,11 +1,12 @@
 package co.edu.uniquindio.read_now.service.impl;
 
-import co.edu.uniquindio.read_now.dto.request.RegistroRequestDTO;
+import co.edu.uniquindio.read_now.dto.request.*;
 import co.edu.uniquindio.read_now.dto.response.*;
 import co.edu.uniquindio.read_now.model.Rol;
 import co.edu.uniquindio.read_now.model.Usuario;
 import co.edu.uniquindio.read_now.repository.IRolRepository;
 import co.edu.uniquindio.read_now.repository.IUsuarioRepository;
+import co.edu.uniquindio.read_now.security.JwtUtil;
 import co.edu.uniquindio.read_now.service.IAuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -27,6 +29,8 @@ public class AuthServiceImpl implements IAuthService {
     private final IUsuarioRepository usuarioRepository;
     private final IRolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+    private final IEmailService emailService;
 
     @Value("${app.trial.days}")
     private int trialDays;
@@ -88,6 +92,153 @@ public class AuthServiceImpl implements IAuthService {
 
         return new MensajeResponseDTO(true,
                 "Registro exitoso. Tienes una prueba gratuita de " + trialDays + " días.");
+    }
+
+    @Override
+    @Transactional
+    public LoginResultDTO login(LoginRequestDTO request) {
+        Usuario usuario = usuarioRepository.findByEmail(request.email())
+                .orElse(null);
+
+        if (usuario == null || !passwordEncoder.matches(request.password(), usuario.getPassword())) {
+            return LoginResultDTO.conMensaje(false, "Credenciales inválidas");
+        }
+
+        if (!"S".equals(usuario.getActivo())) {
+            return LoginResultDTO.conMensaje(false, "La cuenta se encuentra desactivada");
+        }
+
+        // Si 2FA está desactivado (desarrollo), devolver token directo sin pedir código
+        if (!twoFactorEnabled) {
+            usuario.setUltimoAcceso(LocalDateTime.now());
+            usuarioRepository.save(usuario);
+
+            String token = jwtUtil.generateToken(
+                    usuario.getEmail(),
+                    usuario.getRol().getNombre(),
+                    usuario.getUsuarioId()
+            );
+            SesionConfigResponseDTO sesionConfig = new SesionConfigResponseDTO(
+                    inactividadLecturaMs,
+                    inactividadCatalogoMs,
+                    countdownMs
+            );
+            LoginResponseDTO loginResponse = new LoginResponseDTO(
+                    token,
+                    usuario.getEmail(),
+                    usuario.getRol().getNombre(),
+                    usuario.getNombre() + " " + usuario.getApellido(),
+                    usuario.getUsuarioId(),
+                    sesionConfig
+            );
+            log.info("Login sin 2FA (desarrollo): {}", usuario.getEmail());
+            return LoginResultDTO.conToken(loginResponse);
+        }
+
+        // 2FA activado: enviar código por correo
+        String codigo = generarCodigoVerificacion();
+        codigosVerificacion.put(request.email(),
+                new CodigoVerificacionEntry(codigo, LocalDateTime.now().plusMinutes(5)));
+
+        emailService.enviarCodigoVerificacion(request.email(), usuario.getNombre(), codigo);
+        log.info("Código de verificación enviado a: {}", request.email());
+
+        return LoginResultDTO.conMensaje(true,
+                "Se ha enviado un código de verificación a tu correo electrónico");
+    }
+
+    @Override
+    @Transactional
+    public LoginResponseDTO verificarCodigo(VerificacionCodigoRequestDTO request) {
+        CodigoVerificacionEntry entry = codigosVerificacion.get(request.email());
+
+        if (entry == null) {
+            throw new RuntimeException("No hay un código de verificación pendiente para este email");
+        }
+
+        if (LocalDateTime.now().isAfter(entry.expiracion())) {
+            codigosVerificacion.remove(request.email());
+            throw new RuntimeException("El código de verificación ha expirado. Inicia sesión nuevamente");
+        }
+
+        if (!entry.codigo().equals(request.codigo())) {
+            throw new RuntimeException("Código de verificación incorrecto");
+        }
+
+        codigosVerificacion.remove(request.email());
+
+        Usuario usuario = usuarioRepository.findByEmail(request.email())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        usuario.setUltimoAcceso(LocalDateTime.now());
+        usuarioRepository.save(usuario);
+
+        String token = jwtUtil.generateToken(
+                usuario.getEmail(),
+                usuario.getRol().getNombre(),
+                usuario.getUsuarioId()
+        );
+
+        SesionConfigResponseDTO sesionConfig = new SesionConfigResponseDTO(
+                inactividadLecturaMs,
+                inactividadCatalogoMs,
+                countdownMs
+        );
+
+        return new LoginResponseDTO(
+                token,
+                usuario.getEmail(),
+                usuario.getRol().getNombre(),
+                usuario.getNombre() + " " + usuario.getApellido(),
+                usuario.getUsuarioId(),
+                sesionConfig
+        );
+    }
+
+    @Override
+    public MensajeResponseDTO recuperarPassword(RecuperarPasswordRequestDTO request) {
+        Usuario usuario = usuarioRepository.findByEmail(request.email())
+                .orElse(null);
+
+        if (usuario == null) {
+            return new MensajeResponseDTO(true,
+                    "Si el correo está registrado, recibirás un enlace de recuperación");
+        }
+
+        String token = jwtUtil.generateRecoveryToken(request.email());
+        emailService.enviarTokenRecuperacion(request.email(), usuario.getNombre(), token);
+        log.info("Token de recuperación enviado a: {}", request.email());
+
+        return new MensajeResponseDTO(true,
+                "Si el correo está registrado, recibirás un enlace de recuperación");
+    }
+
+    @Override
+    @Transactional
+    public MensajeResponseDTO restablecerPassword(RestablecerPasswordRequestDTO request) {
+        if (!jwtUtil.isTokenValid(request.token())) {
+            return new MensajeResponseDTO(false, "El token es inválido o ha expirado");
+        }
+
+        if (!jwtUtil.isRecoveryToken(request.token())) {
+            return new MensajeResponseDTO(false, "El token no es un token de recuperación válido");
+        }
+
+        String email = jwtUtil.getEmailFromToken(request.token());
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        usuario.setPassword(passwordEncoder.encode(request.nuevaPassword()));
+        usuarioRepository.save(usuario);
+        log.info("Contraseña restablecida para: {}", email);
+
+        return new MensajeResponseDTO(true, "Contraseña actualizada exitosamente");
+    }
+
+    private String generarCodigoVerificacion() {
+        Random random = new Random();
+        int code = 100000 + random.nextInt(900000);
+        return String.valueOf(code);
     }
 
 
