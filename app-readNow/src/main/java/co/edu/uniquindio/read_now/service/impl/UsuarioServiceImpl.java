@@ -108,4 +108,13 @@ public class UsuarioServiceImpl implements IUsuarioService {
         return esSuscripcionActiva(usuario);
     }
 
+    private boolean esSuscripcionActiva(Usuario usuario) {
+        LocalDateTime ahora = LocalDateTime.now();
+        if (usuario.getFinSuscripcionAt() != null) {
+            return ahora.isBefore(usuario.getFinSuscripcionAt());
+        }
+        return usuario.getFinSuscripcion() != null
+                && !usuario.getFinSuscripcion().isBefore(LocalDate.now());
+    }
+
 }

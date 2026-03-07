@@ -14,7 +14,9 @@ public interface IUsuarioService {
 
     /** Activa o desactiva la verificación en dos pasos para el usuario. */
     UsuarioResponseDTO actualizarVerificacionDosPasos(Long usuarioId, boolean activo);
+
     void actualizarUltimoAcceso(String email);
+
     boolean puedeAccederAlCatalogo(Long usuarioId);
 
 }
