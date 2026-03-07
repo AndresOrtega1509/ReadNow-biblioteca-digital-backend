@@ -100,5 +100,12 @@ public class UsuarioServiceImpl implements IUsuarioService {
         usuario.setUltimoAcceso(LocalDateTime.now());
         usuarioRepository.save(usuario);
     }
+    @Override
+    public boolean puedeAccederAlCatalogo(Long usuarioId) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        if ("ADMIN".equals(usuario.getRol().getNombre())) return true;
+        return esSuscripcionActiva(usuario);
+    }
 
 }
