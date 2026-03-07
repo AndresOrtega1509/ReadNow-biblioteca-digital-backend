@@ -55,4 +55,10 @@ public class AuthController {
         MensajeResponseDTO response = authService.restablecerPassword(request);
         return response.exitoso() ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
     }
+    @PostMapping("/recuperar/verificar-telefono")
+    @Operation(summary = "Paso 2: Verificar últimos 4 dígitos", description = "Si coinciden, se envía por correo un enlace para restablecer la contraseña (válido 15 min).")
+    public ResponseEntity<MensajeResponseDTO> verificarTelefonoRecuperacion(@Valid @RequestBody VerificarTelefonoRecuperacionRequestDTO request) {
+        MensajeResponseDTO response = authService.verificarTelefonoRecuperacion(request);
+        return response.exitoso() ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
+    }
 }
