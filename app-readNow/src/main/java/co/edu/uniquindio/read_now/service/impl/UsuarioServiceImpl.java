@@ -22,6 +22,7 @@ public class UsuarioServiceImpl implements IUsuarioService {
     private final PasswordEncoder passwordEncoder;
 
 
+
     @Override
     public UsuarioResponseDTO obtenerPerfil(Long usuarioId) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
@@ -116,5 +117,12 @@ public class UsuarioServiceImpl implements IUsuarioService {
         return usuario.getFinSuscripcion() != null
                 && !usuario.getFinSuscripcion().isBefore(LocalDate.now());
     }
+    @Override
+    public boolean tieneSuscripcionActiva(Long usuarioId) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        return esSuscripcionActiva(usuario);
+    }
+
 
 }
