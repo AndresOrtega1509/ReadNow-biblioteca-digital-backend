@@ -47,4 +47,11 @@ public class RecursoController {
         return ResponseEntity.ok(recursoService.actualizarRecurso(id, request, archivo, portada));
     }
 
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Eliminar recurso", description = "Elimina un recurso del catálogo (soft delete)")
+    public ResponseEntity<MensajeResponseDTO> eliminarRecurso(@PathVariable Long id) {
+        recursoService.eliminarRecurso(id);
+        return ResponseEntity.ok(new MensajeResponseDTO(true, "Recurso eliminado exitosamente"));
+    }
+
 }
