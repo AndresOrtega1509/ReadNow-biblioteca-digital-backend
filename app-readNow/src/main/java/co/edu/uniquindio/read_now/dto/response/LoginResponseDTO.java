@@ -5,6 +5,7 @@ public record LoginResponseDTO(
         String email,
         String rol,
         String nombre,
+        String username,
         Long usuarioId,
         SesionConfigResponseDTO sesionConfig
 ) {}

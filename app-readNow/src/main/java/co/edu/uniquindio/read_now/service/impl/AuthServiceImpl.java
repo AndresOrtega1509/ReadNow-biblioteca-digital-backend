@@ -109,8 +109,8 @@ public class AuthServiceImpl implements IAuthService {
             return LoginResultDTO.conMensaje(false, "La cuenta se encuentra desactivada");
         }
 
-        // Si 2FA está desactivado (desarrollo), devolver token directo sin pedir código
-        if (!twoFactorEnabled) {
+        boolean usar2FA = twoFactorEnabled && (usuario.getTwoFactorActivo() == null || Boolean.TRUE.equals(usuario.getTwoFactorActivo()));
+        if (!usar2FA) {
             usuario.setUltimoAcceso(LocalDateTime.now());
             usuarioRepository.save(usuario);
 
@@ -129,6 +129,7 @@ public class AuthServiceImpl implements IAuthService {
                     usuario.getEmail(),
                     usuario.getRol().getNombre(),
                     usuario.getNombre() + " " + usuario.getApellido(),
+                    usuario.getUsername(),
                     usuario.getUsuarioId(),
                     sesionConfig
             );
@@ -136,7 +137,6 @@ public class AuthServiceImpl implements IAuthService {
             return LoginResultDTO.conToken(loginResponse);
         }
 
-        // 2FA activado: enviar código por correo
         String codigo = generarCodigoVerificacion();
         codigosVerificacion.put(request.email(),
                 new CodigoVerificacionEntry(codigo, LocalDateTime.now().plusMinutes(5)));
@@ -191,55 +191,25 @@ public class AuthServiceImpl implements IAuthService {
                 usuario.getEmail(),
                 usuario.getRol().getNombre(),
                 usuario.getNombre() + " " + usuario.getApellido(),
+                usuario.getUsername(),
                 usuario.getUsuarioId(),
                 sesionConfig
         );
     }
 
     @Override
-    public MensajeResponseDTO recuperarPassword(RecuperarPasswordRequestDTO request) {
-        Usuario usuario = usuarioRepository.findByEmail(request.email())
-                .orElse(null);
-
-        if (usuario == null) {
-            return new MensajeResponseDTO(true,
-                    "Si el correo está registrado, recibirás un enlace de recuperación");
+    public RecuperarPasswordResponseDTO recuperarPassword(RecuperarPasswordRequestDTO request) {
+        String telefonoEnmascarado = null;
+        Usuario usuario = usuarioRepository.findByEmail(request.email()).orElse(null);
+        if (usuario != null && usuario.getTelefono() != null && !usuario.getTelefono().isBlank()) {
+            String soloDigitos = usuario.getTelefono().replaceAll("\\D", "");
+            if (soloDigitos.length() >= 4) {
+                telefonoEnmascarado = soloDigitos.substring(0, soloDigitos.length() - 4) + "****";
+            }
         }
-
-        String token = jwtUtil.generateRecoveryToken(request.email());
-        emailService.enviarTokenRecuperacion(request.email(), usuario.getNombre(), token);
-        log.info("Token de recuperación enviado a: {}", request.email());
-
-        return new MensajeResponseDTO(true,
-                "Si el correo está registrado, recibirás un enlace de recuperación");
-    }
-
-    @Override
-    @Transactional
-    public MensajeResponseDTO restablecerPassword(RestablecerPasswordRequestDTO request) {
-        if (!jwtUtil.isTokenValid(request.token())) {
-            return new MensajeResponseDTO(false, "El token es inválido o ha expirado");
-        }
-
-        if (!jwtUtil.isRecoveryToken(request.token())) {
-            return new MensajeResponseDTO(false, "El token no es un token de recuperación válido");
-        }
-
-        String email = jwtUtil.getEmailFromToken(request.token());
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        usuario.setPassword(passwordEncoder.encode(request.nuevaPassword()));
-        usuarioRepository.save(usuario);
-        log.info("Contraseña restablecida para: {}", email);
-
-        return new MensajeResponseDTO(true, "Contraseña actualizada exitosamente");
-    }
-
-    private String generarCodigoVerificacion() {
-        Random random = new Random();
-        int code = 100000 + random.nextInt(900000);
-        return String.valueOf(code);
+        return new RecuperarPasswordResponseDTO(true,
+                "Si el correo está registrado, podrás continuar con la verificación por teléfono.",
+                telefonoEnmascarado);
     }
 
     @Override
@@ -266,6 +236,30 @@ public class AuthServiceImpl implements IAuthService {
                 "Revisa tu correo. Te hemos enviado un enlace para restablecer tu contraseña (válido " + recuperacionMinutos + " minutos).");
     }
 
+    @Override
+    @Transactional
+    public MensajeResponseDTO restablecerPassword(RestablecerPasswordRequestDTO request) {
+        if (!jwtUtil.isTokenValid(request.token())) {
+            return new MensajeResponseDTO(false, "El enlace ha expirado. Solicita de nuevo la recuperación de contraseña.");
+        }
+        if (!jwtUtil.isRecoveryToken(request.token())) {
+            return new MensajeResponseDTO(false, "Enlace inválido.");
+        }
 
+        String email = jwtUtil.getEmailFromToken(request.token());
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
+        usuario.setPassword(passwordEncoder.encode(request.nuevaPassword()));
+        usuarioRepository.save(usuario);
+        log.info("Contraseña restablecida para: {}", email);
+
+        return new MensajeResponseDTO(true, "Contraseña actualizada exitosamente");
+    }
+
+    private String generarCodigoVerificacion() {
+        Random random = new Random();
+        int code = 100000 + random.nextInt(900000);
+        return String.valueOf(code);
+    }
 }
