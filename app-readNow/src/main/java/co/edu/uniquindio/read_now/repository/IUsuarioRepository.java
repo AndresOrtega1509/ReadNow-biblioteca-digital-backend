@@ -55,6 +55,30 @@ public interface IUsuarioRepository extends JpaRepository<Usuario, Long> {
     /** Usuarios sin plan asignado con suscripción vencida. */
     long countBySuscripcionIsNullAndFinSuscripcionIsNotNullAndFinSuscripcionBefore(LocalDate hoy);
 
+    /** Prueba gratuita activas: considera finSuscripcionAt. */
+    @Query("SELECT COUNT(u) FROM Usuario u WHERE u.suscripcion IS NULL AND (" +
+            "(u.finSuscripcionAt IS NOT NULL AND u.finSuscripcionAt > :ahora) OR " +
+            "(u.finSuscripcionAt IS NULL AND u.finSuscripcion IS NOT NULL AND u.finSuscripcion >= :hoy))")
+    long countPruebaGratuitaActivas(@Param("hoy") LocalDate hoy, @Param("ahora") LocalDateTime ahora);
+
+    /** Prueba gratuita vencidas: considera finSuscripcionAt. */
+    @Query("SELECT COUNT(u) FROM Usuario u WHERE u.suscripcion IS NULL AND (" +
+            "(u.finSuscripcionAt IS NOT NULL AND u.finSuscripcionAt <= :ahora) OR " +
+            "(u.finSuscripcionAt IS NULL AND u.finSuscripcion IS NOT NULL AND u.finSuscripcion < :hoy))")
+    long countPruebaGratuitaVencidas(@Param("hoy") LocalDate hoy, @Param("ahora") LocalDateTime ahora);
+
+    /** Plan con suscripcion_id: activas considerando finSuscripcionAt. */
+    @Query("SELECT COUNT(u) FROM Usuario u WHERE u.suscripcion.suscripcionId = :planId AND (" +
+            "(u.finSuscripcionAt IS NOT NULL AND u.finSuscripcionAt > :ahora) OR " +
+            "(u.finSuscripcionAt IS NULL AND u.finSuscripcion IS NOT NULL AND u.finSuscripcion >= :hoy))")
+    long countPlanActivas(@Param("planId") Long planId, @Param("hoy") LocalDate hoy, @Param("ahora") LocalDateTime ahora);
+
+    /** Plan con suscripcion_id: vencidas considerando finSuscripcionAt. */
+    @Query("SELECT COUNT(u) FROM Usuario u WHERE u.suscripcion.suscripcionId = :planId AND (" +
+            "(u.finSuscripcionAt IS NOT NULL AND u.finSuscripcionAt <= :ahora) OR " +
+            "(u.finSuscripcionAt IS NULL AND u.finSuscripcion IS NOT NULL AND u.finSuscripcion < :hoy))")
+    long countPlanVencidas(@Param("planId") Long planId, @Param("hoy") LocalDate hoy, @Param("ahora") LocalDateTime ahora);
+
     /** Lectores con suscripción activa (para recordatorios de vencimiento). */
     @Query("SELECT u FROM Usuario u WHERE u.rol.nombre = 'LECTOR' AND u.activo = 'S' AND (" +
             "(u.finSuscripcionAt IS NOT NULL AND u.finSuscripcionAt > :ahora) OR " +
