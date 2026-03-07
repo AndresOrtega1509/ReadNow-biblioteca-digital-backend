@@ -1,6 +1,5 @@
 package co.edu.uniquindio.read_now.service.impl;
 
-import co.edu.uniquindio.read_now.dto.response.UsuarioResponseDTO;
 import co.edu.uniquindio.read_now.model.Usuario;
 import co.edu.uniquindio.read_now.repository.IUsuarioRepository;
 import co.edu.uniquindio.read_now.service.IEmailService;
@@ -21,10 +20,6 @@ public class NotificadorSuscripcionVencidaServiceImpl implements INotificadorSus
 
     private final IUsuarioRepository usuarioRepository;
     private final IEmailService emailService;
-
-
-
-
 
     @Async
     @Override
