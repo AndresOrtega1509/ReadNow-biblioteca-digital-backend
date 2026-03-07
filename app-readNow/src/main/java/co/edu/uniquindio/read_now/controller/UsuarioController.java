@@ -66,5 +66,11 @@ public class UsuarioController {
         String token = request.getHeader("Authorization").substring(7);
         return jwtUtil.getUsuarioIdFromToken(token);
     }
+    @PostMapping("/sesion/actividad")
+    @Operation(summary = "Registrar actividad", description = "Actualiza el último acceso del usuario para control de inactividad")
+    public ResponseEntity<MensajeResponseDTO> registrarActividad(Authentication authentication) {
+        usuarioService.actualizarUltimoAcceso(authentication.getName());
+        return ResponseEntity.ok(new MensajeResponseDTO(true, "Actividad registrada"));
+    }
 
 }

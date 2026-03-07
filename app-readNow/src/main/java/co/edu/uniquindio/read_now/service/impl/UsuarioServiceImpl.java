@@ -92,5 +92,13 @@ public class UsuarioServiceImpl implements IUsuarioService {
         usuarioRepository.save(usuario);
         return obtenerPerfil(usuarioId);
     }
+    @Override
+    @Transactional
+    public void actualizarUltimoAcceso(String email) {
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        usuario.setUltimoAcceso(LocalDateTime.now());
+        usuarioRepository.save(usuario);
+    }
 
 }
