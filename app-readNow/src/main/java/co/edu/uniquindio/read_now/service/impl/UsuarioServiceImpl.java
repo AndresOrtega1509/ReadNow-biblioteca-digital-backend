@@ -5,6 +5,7 @@ import co.edu.uniquindio.read_now.dto.request.CambiarPasswordRequestDTO;
 import co.edu.uniquindio.read_now.dto.response.UsuarioResponseDTO;
 import co.edu.uniquindio.read_now.model.Usuario;
 import co.edu.uniquindio.read_now.repository.IUsuarioRepository;
+import co.edu.uniquindio.read_now.service.INotificadorSuscripcionVencidaService;
 import co.edu.uniquindio.read_now.service.IUsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,8 +21,7 @@ public class UsuarioServiceImpl implements IUsuarioService {
 
     private final IUsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
-
-
+    private final INotificadorSuscripcionVencidaService notificadorSuscripcionVencida;
 
     @Override
     public UsuarioResponseDTO obtenerPerfil(Long usuarioId) {
@@ -29,6 +29,11 @@ public class UsuarioServiceImpl implements IUsuarioService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         boolean suscripcionActiva = esSuscripcionActiva(usuario);
+
+        // Si la suscripción está vencida y no se ha notificado, enviar correo de forma asíncrona
+        if (!suscripcionActiva && !Boolean.TRUE.equals(usuario.getSuscripcionVencidaNotificada())) {
+            notificadorSuscripcionVencida.notificarSiCorresponde(usuarioId);
+        }
 
         return new UsuarioResponseDTO(
                 usuario.getUsuarioId(),
