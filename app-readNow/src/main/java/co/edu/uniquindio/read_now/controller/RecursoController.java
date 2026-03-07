@@ -37,4 +37,14 @@ public class RecursoController {
     }
 
 
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Actualizar recurso", description = "Actualiza datos y opcionalmente reemplaza PDF y/o portada")
+    public ResponseEntity<RecursoResponseDTO> actualizarRecurso(
+            @PathVariable Long id,
+            @Valid @RequestPart("recurso") RecursoRequestDTO request,
+            @RequestPart(value = "archivo", required = false) MultipartFile archivo,
+            @RequestPart(value = "portada", required = false) MultipartFile portada) {
+        return ResponseEntity.ok(recursoService.actualizarRecurso(id, request, archivo, portada));
+    }
+
 }
