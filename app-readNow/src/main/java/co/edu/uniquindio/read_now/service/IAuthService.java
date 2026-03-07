@@ -5,6 +5,7 @@ import co.edu.uniquindio.read_now.dto.request.*;
 import co.edu.uniquindio.read_now.dto.response.LoginResponseDTO;
 import co.edu.uniquindio.read_now.dto.response.LoginResultDTO;
 import co.edu.uniquindio.read_now.dto.response.MensajeResponseDTO;
+import co.edu.uniquindio.read_now.dto.response.RecuperarPasswordResponseDTO;
 
 
 public interface IAuthService {
@@ -15,9 +16,10 @@ public interface IAuthService {
 
     LoginResponseDTO verificarCodigo(VerificacionCodigoRequestDTO request);
 
-    MensajeResponseDTO recuperarPassword(RecuperarPasswordRequestDTO request);
+    RecuperarPasswordResponseDTO recuperarPassword(RecuperarPasswordRequestDTO request);
+
+    /** Verifica últimos 4 dígitos del teléfono; si coinciden, envía por correo un enlace para restablecer contraseña. */
+    MensajeResponseDTO verificarTelefonoRecuperacion(VerificarTelefonoRecuperacionRequestDTO request);
 
     MensajeResponseDTO restablecerPassword(RestablecerPasswordRequestDTO request);
-
-    MensajeResponseDTO verificarTelefonoRecuperacion(VerificarTelefonoRecuperacionRequestDTO request);
 }
