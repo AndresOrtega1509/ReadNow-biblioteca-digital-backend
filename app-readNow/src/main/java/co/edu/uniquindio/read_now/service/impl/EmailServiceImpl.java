@@ -129,6 +129,55 @@ public class EmailServiceImpl implements IEmailService {
         enviarCorreo(email, asunto, contenido);
     }
 
+    @Async
+    @Override
+    public void enviarCorreoSuscripcionVencida(String email, String nombre) {
+        String asunto = "ReadNow - Tu suscripción ha vencido";
+
+        String contenido = """
+                <html>
+                <body style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h2 style="color: #2c3e50;">Hola %s,</h2>
+                    <p>Te informamos que tu suscripción o prueba gratuita en ReadNow ha vencido.</p>
+                    <p>Para seguir disfrutando de nuestro catálogo de recursos y poder leer libros, revistas y más,
+                       necesitas renovar tu suscripción.</p>
+                    <p style="margin-top: 20px;">
+                        <strong>Inicia sesión en tu perfil para ver las opciones de renovación.</strong>
+                    </p>
+                    <p>¡Te esperamos de vuelta en ReadNow!</p>
+                    <hr>
+                    <p style="color: #95a5a6; font-size: 12px;">ReadNow - Biblioteca Digital</p>
+                </body>
+                </html>
+                """.formatted(nombre);
+
+        enviarCorreo(email, asunto, contenido);
+    }
+
+    @Async
+    @Override
+    public void enviarRecordatorioSuscripcionPorVencer(String email, String nombre, int diasRestantes) {
+        String diasTexto = diasRestantes == 1 ? "1 día" : diasRestantes + " días";
+        String asunto = "ReadNow - Tu suscripción vence en " + diasTexto;
+
+        String contenido = """
+                <html>
+                <body style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h2 style="color: #2c3e50;">Hola %s,</h2>
+                    <p>Te recordamos que tu suscripción o prueba gratuita en ReadNow vence en <strong>%s</strong>.</p>
+                    <p>Para no perder el acceso al catálogo de recursos, libros, revistas y más, te recomendamos renovar tu suscripción antes de que expire.</p>
+                    <p style="margin-top: 20px;">
+                        <strong>Inicia sesión en tu perfil para renovar y seguir disfrutando de ReadNow.</strong>
+                    </p>
+                    <hr>
+                    <p style="color: #95a5a6; font-size: 12px;">ReadNow - Biblioteca Digital</p>
+                </body>
+                </html>
+                """.formatted(nombre, diasTexto);
+
+        enviarCorreo(email, asunto, contenido);
+    }
+
     private void enviarCorreo(String to, String subject, String htmlContent) {
         try {
 
@@ -149,4 +198,5 @@ public class EmailServiceImpl implements IEmailService {
             throw new RuntimeException("Error al enviar el correo electrónico", e);
         }
     }
+
 }
