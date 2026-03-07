@@ -1,5 +1,6 @@
 package co.edu.uniquindio.read_now.controller;
 
+import co.edu.uniquindio.read_now.dto.response.RecursoResponseDTO;
 import co.edu.uniquindio.read_now.exception.SuscripcionVencidaException;
 import co.edu.uniquindio.read_now.security.JwtUtil;
 import co.edu.uniquindio.read_now.service.IRecursoService;
