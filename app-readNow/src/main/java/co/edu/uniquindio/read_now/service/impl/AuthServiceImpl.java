@@ -242,5 +242,30 @@ public class AuthServiceImpl implements IAuthService {
         return String.valueOf(code);
     }
 
+    @Override
+    public MensajeResponseDTO verificarTelefonoRecuperacion(VerificarTelefonoRecuperacionRequestDTO request) {
+        Usuario usuario = usuarioRepository.findByEmail(request.email()).orElse(null);
+        if (usuario == null || usuario.getTelefono() == null || usuario.getTelefono().isBlank()) {
+            return new MensajeResponseDTO(false, "Datos incorrectos. Verifica tu correo y los últimos 4 dígitos del teléfono.");
+        }
+        String soloDigitos = usuario.getTelefono().replaceAll("\\D", "");
+        if (soloDigitos.length() < 4) {
+            return new MensajeResponseDTO(false, "Datos incorrectos. Verifica tu correo y los últimos 4 dígitos del teléfono.");
+        }
+        String ultimos4 = soloDigitos.substring(soloDigitos.length() - 4);
+        if (!ultimos4.equals(request.ultimos4Digitos())) {
+            return new MensajeResponseDTO(false, "Datos incorrectos. Verifica tu correo y los últimos 4 dígitos del teléfono.");
+        }
+
+        String token = jwtUtil.generateRecoveryToken(request.email());
+        String urlEnlace = frontendUrl.replaceAll("/$", "") + "/restablecer-password?token=" + token;
+        emailService.enviarEnlaceRecuperacion(usuario.getEmail(), usuario.getNombre(), urlEnlace);
+        log.info("Enlace de recuperación enviado por correo a: {}", request.email());
+
+        return new MensajeResponseDTO(true,
+                "Revisa tu correo. Te hemos enviado un enlace para restablecer tu contraseña (válido " + recuperacionMinutos + " minutos).");
+    }
+
+
 
 }

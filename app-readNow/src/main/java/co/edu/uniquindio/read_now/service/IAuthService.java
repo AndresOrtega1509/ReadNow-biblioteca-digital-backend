@@ -18,4 +18,6 @@ public interface IAuthService {
     MensajeResponseDTO recuperarPassword(RecuperarPasswordRequestDTO request);
 
     MensajeResponseDTO restablecerPassword(RestablecerPasswordRequestDTO request);
+
+    MensajeResponseDTO verificarTelefonoRecuperacion(VerificarTelefonoRecuperacionRequestDTO request);
 }
