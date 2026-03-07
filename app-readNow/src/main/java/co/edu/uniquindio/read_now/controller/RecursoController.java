@@ -36,7 +36,6 @@ public class RecursoController {
         return ResponseEntity.ok(recursoService.crearRecurso(request, archivo, portada));
     }
 
-
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Actualizar recurso", description = "Actualiza datos y opcionalmente reemplaza PDF y/o portada")
     public ResponseEntity<RecursoResponseDTO> actualizarRecurso(
@@ -54,4 +53,31 @@ public class RecursoController {
         return ResponseEntity.ok(new MensajeResponseDTO(true, "Recurso eliminado exitosamente"));
     }
 
+    // ========== Tipos de Recurso (mismo controlador para evitar problemas de carga) ==========
+    @GetMapping("/tipos")
+    @Operation(summary = "Listar tipos de recurso")
+    public ResponseEntity<List<TipoRecursoResponseDTO>> listarTipos() {
+        return ResponseEntity.ok(tipoRecursoService.listarTodos());
+    }
+
+    @PostMapping("/tipos")
+    @Operation(summary = "Crear tipo de recurso")
+    public ResponseEntity<TipoRecursoResponseDTO> crearTipo(@Valid @RequestBody TipoRecursoRequestDTO request) {
+        return ResponseEntity.ok(tipoRecursoService.crear(request));
+    }
+
+    @PutMapping("/tipos/{id}")
+    @Operation(summary = "Actualizar tipo de recurso")
+    public ResponseEntity<TipoRecursoResponseDTO> actualizarTipo(
+            @PathVariable Long id,
+            @Valid @RequestBody TipoRecursoRequestDTO request) {
+        return ResponseEntity.ok(tipoRecursoService.actualizar(id, request));
+    }
+
+    @DeleteMapping("/tipos/{id}")
+    @Operation(summary = "Eliminar tipo de recurso")
+    public ResponseEntity<MensajeResponseDTO> eliminarTipo(@PathVariable Long id) {
+        tipoRecursoService.eliminar(id);
+        return ResponseEntity.ok(new MensajeResponseDTO(true, "Tipo de recurso eliminado correctamente"));
+    }
 }
