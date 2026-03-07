@@ -52,6 +52,31 @@ public class EmailServiceImpl implements IEmailService {
 
     @Async
     @Override
+    public void enviarEnlaceRecuperacion(String email, String nombre, String urlEnlace) {
+        String asunto = "ReadNow - Restablecer contraseña";
+
+        String contenido = """
+                <html>
+                <body style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h2 style="color: #2c3e50;">Hola %s,</h2>
+                    <p>Has solicitado recuperar tu contraseña y verificaste los últimos 4 dígitos de tu teléfono.</p>
+                    <p>Haz clic en el siguiente enlace para elegir una nueva contraseña (válido por 15 minutos):</p>
+                    <p style="margin: 24px 0;">
+                        <a href="%s" style="background-color: #3498db; color: white; padding: 12px 24px; text-decoration: none;
+                           border-radius: 8px; font-weight: bold; display: inline-block;">Restablecer contraseña</a>
+                    </p>
+                    <p style="color: #e74c3c; margin-top: 15px;"><strong>Si no solicitaste este cambio, ignora este mensaje.</strong></p>
+                    <hr>
+                    <p style="color: #95a5a6; font-size: 12px;">ReadNow - Biblioteca Digital</p>
+                </body>
+                </html>
+                """.formatted(nombre, urlEnlace);
+
+        enviarCorreo(email, asunto, contenido);
+    }
+
+    @Async
+    @Override
     public void enviarTokenRecuperacion(String email, String nombre, String token) {
 
         String asunto = "ReadNow - Recuperación de contraseña";
