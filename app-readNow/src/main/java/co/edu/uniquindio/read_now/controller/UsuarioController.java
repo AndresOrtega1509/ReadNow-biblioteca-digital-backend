@@ -72,5 +72,11 @@ public class UsuarioController {
         usuarioService.actualizarUltimoAcceso(authentication.getName());
         return ResponseEntity.ok(new MensajeResponseDTO(true, "Actividad registrada"));
     }
+    @GetMapping("/puede-acceder-catalogo")
+    @Operation(summary = "Puede acceder al catálogo", description = "Indica si el usuario puede acceder (ADMIN siempre; LECTOR solo con suscripción activa)")
+    public ResponseEntity<Boolean> puedeAccederAlCatalogo(HttpServletRequest httpRequest) {
+        Long usuarioId = getUsuarioId(httpRequest);
+        return ResponseEntity.ok(usuarioService.puedeAccederAlCatalogo(usuarioId));
+    }
 
 }
