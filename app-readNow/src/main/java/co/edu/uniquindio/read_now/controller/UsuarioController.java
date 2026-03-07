@@ -79,4 +79,10 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.puedeAccederAlCatalogo(usuarioId));
     }
 
+    @GetMapping("/suscripcion/estado")
+    @Operation(summary = "Estado de suscripción", description = "Verifica si la suscripción/prueba gratuita está activa")
+    public ResponseEntity<Boolean> estadoSuscripcion(HttpServletRequest httpRequest) {
+        Long usuarioId = getUsuarioId(httpRequest);
+        return ResponseEntity.ok(usuarioService.tieneSuscripcionActiva(usuarioId));
+    }
 }

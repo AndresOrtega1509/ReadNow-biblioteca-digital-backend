@@ -19,4 +19,7 @@ public interface IUsuarioService {
 
     boolean puedeAccederAlCatalogo(Long usuarioId);
 
+    boolean tieneSuscripcionActiva(Long usuarioId);
+
+
 }
