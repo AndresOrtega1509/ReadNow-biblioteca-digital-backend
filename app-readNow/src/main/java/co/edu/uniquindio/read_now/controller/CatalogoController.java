@@ -66,4 +66,10 @@ public class CatalogoController {
         return ResponseEntity.ok(recursoService.listarPorCategoria(categoriaId));
     }
 
+    @GetMapping("/recursos/mejor-calificados")
+    @Operation(summary = "Mejor calificados", description = "Obtiene los recursos mejor calificados del catálogo")
+    public ResponseEntity<List<RecursoResponseDTO>> mejorCalificados(HttpServletRequest request) {
+        verificarAccesoCatalogo(request);
+        return ResponseEntity.ok(recursoService.obtenerMejorCalificados());
+    }
 }
