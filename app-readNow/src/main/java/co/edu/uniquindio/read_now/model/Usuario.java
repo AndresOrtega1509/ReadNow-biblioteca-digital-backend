@@ -70,5 +70,7 @@ public class Usuario {
     @JoinColumn(name = "rol_id")
     private Rol rol;
 
-
+    @ManyToOne
+    @JoinColumn(name = "suscripcion_id")
+    private Suscripcion suscripcion;
 }
