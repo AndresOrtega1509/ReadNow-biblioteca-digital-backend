@@ -1,0 +1,11 @@
+{
+  "java.test.config": [
+    {
+      "vmArgs": [
+        "-Xshare:off",
+        "-javaagent:${env:USERPROFILE}\\.m2\\repository\\org\\mockito\\mockito-core\\5.14.2\\mockito-core-5.14.2.jar"
+      ]
+    }
+],
+"java.configuration.updateBuildConfiguration": "interactive"
+}
