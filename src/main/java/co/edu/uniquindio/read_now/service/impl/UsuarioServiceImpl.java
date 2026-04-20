@@ -2,6 +2,8 @@ package co.edu.uniquindio.read_now.service.impl;
 
 import co.edu.uniquindio.read_now.dto.request.ActualizarPerfilRequestDTO;
 import co.edu.uniquindio.read_now.dto.request.CambiarPasswordRequestDTO;
+import co.edu.uniquindio.read_now.dto.request.SolicitudBajaPlataformaRequestDTO;
+import co.edu.uniquindio.read_now.dto.response.MensajeResponseDTO;
 import co.edu.uniquindio.read_now.dto.response.UsuarioResponseDTO;
 import co.edu.uniquindio.read_now.model.Usuario;
 import co.edu.uniquindio.read_now.repository.IUsuarioRepository;
@@ -29,6 +31,8 @@ public class UsuarioServiceImpl implements IUsuarioService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         boolean suscripcionActiva = esSuscripcionActiva(usuario);
+        boolean puedePrueba = puedeActivarPruebaGratuita(usuario);
+        String nombrePlan = resolverNombrePlanSuscripcion(usuario, suscripcionActiva);
 
         // Si la suscripción está vencida y no se ha notificado, enviar correo de forma asíncrona
         if (!suscripcionActiva && !Boolean.TRUE.equals(usuario.getSuscripcionVencidaNotificada())) {
@@ -48,8 +52,52 @@ public class UsuarioServiceImpl implements IUsuarioService {
                 usuario.getFinSuscripcion(),
                 usuario.getFinSuscripcionAt(),
                 suscripcionActiva,
-                usuario.getTwoFactorActivo()
+                puedePrueba,
+                usuario.getTwoFactorActivo(),
+                nombrePlan,
+                "S".equals(usuario.getActivo())
         );
+    }
+
+    @Override
+    @Transactional
+    public MensajeResponseDTO solicitarBajaPlataforma(Long usuarioId, SolicitudBajaPlataformaRequestDTO request) {
+        Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        if (!"S".equals(usuario.getActivo())) {
+            return new MensajeResponseDTO(false, "Tu cuenta ya se encuentra desactivada.");
+        }
+        usuario.setActivo("N");
+        usuario.setFechaSolicitudBaja(LocalDateTime.now());
+        if (request.motivo() != null && !request.motivo().isBlank()) {
+            String m = request.motivo().trim();
+            usuario.setMotivoSolicitudBaja(m.length() > 2000 ? m.substring(0, 2000) : m);
+        } else {
+            usuario.setMotivoSolicitudBaja(null);
+        }
+        usuarioRepository.save(usuario);
+        return new MensajeResponseDTO(true,
+                "Solicitud registrada. Tu cuenta quedó desactivada; no eliminamos tus datos. "
+                        + "Si tenías suscripción recurrente con tarjeta, revisa también el portal de pagos para evitar cargos futuros. "
+                        + "Para volver a ingresar más adelante, contacta al soporte de ReadNow.");
+    }
+
+    /**
+     * Texto para el perfil: plan de catálogo o prueba gratuita (acceso activo sin {@code suscripcion}).
+     */
+    private static String resolverNombrePlanSuscripcion(Usuario usuario, boolean suscripcionActiva) {
+        if (!suscripcionActiva) {
+            return null;
+        }
+        if (usuario.getSuscripcion() != null) {
+            return usuario.getSuscripcion().getNombre();
+        }
+        boolean sinStripeSub = usuario.getStripeSubscriptionId() == null
+                || usuario.getStripeSubscriptionId().isBlank();
+        if (sinStripeSub) {
+            return "Prueba gratuita";
+        }
+        return "Suscripción activa";
     }
 
     @Override
@@ -121,6 +169,17 @@ public class UsuarioServiceImpl implements IUsuarioService {
         }
         return usuario.getFinSuscripcion() != null
                 && !usuario.getFinSuscripcion().isBefore(LocalDate.now());
+    }
+
+    /** Prueba gratuita de 15 días: solo lectores, una vez, y si no tienen periodo activo. */
+    private boolean puedeActivarPruebaGratuita(Usuario usuario) {
+        if (!"LECTOR".equals(usuario.getRol().getNombre())) {
+            return false;
+        }
+        if (Boolean.TRUE.equals(usuario.getPruebaGratuitaUsada())) {
+            return false;
+        }
+        return !esSuscripcionActiva(usuario);
     }
     @Override
     public boolean tieneSuscripcionActiva(Long usuarioId) {

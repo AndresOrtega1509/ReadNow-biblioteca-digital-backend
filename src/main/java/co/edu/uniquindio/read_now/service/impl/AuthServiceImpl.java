@@ -80,19 +80,18 @@ public class AuthServiceImpl implements IAuthService {
                 .password(passwordEncoder.encode(request.password()))
                 .fechaRegistro(LocalDate.now())
                 .activo("S")
-                .inicioSuscripcion(LocalDate.now())
-                .finSuscripcion(LocalDate.now().plusDays(trialDays))
                 .ultimoAcceso(LocalDateTime.now())
                 .rol(rolLector)
                 .suscripcionVencidaNotificada(false)
                 .twoFactorActivo(true)
+                .pruebaGratuitaUsada(false)
                 .build();
 
         usuarioRepository.save(usuario);
         log.info("Usuario registrado: {}", request.email());
 
         return new MensajeResponseDTO(true,
-                "Registro exitoso. Tienes una prueba gratuita de " + trialDays + " días.");
+                "Registro exitoso. Elige un plan o activa la prueba gratuita de " + trialDays + " días desde la pantalla de suscripción.");
     }
 
     @Override
@@ -170,6 +169,10 @@ public class AuthServiceImpl implements IAuthService {
 
         Usuario usuario = usuarioRepository.findByEmail(request.email())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (!"S".equals(usuario.getActivo())) {
+            throw new RuntimeException("La cuenta se encuentra desactivada");
+        }
 
         usuario.setUltimoAcceso(LocalDateTime.now());
         usuarioRepository.save(usuario);

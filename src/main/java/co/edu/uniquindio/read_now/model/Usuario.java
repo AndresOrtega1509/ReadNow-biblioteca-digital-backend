@@ -73,4 +73,22 @@ public class Usuario {
     @ManyToOne
     @JoinColumn(name = "suscripcion_id")
     private Suscripcion suscripcion;
+
+    /** Si true, el usuario ya usó la prueba gratuita de 15 días (no puede volver a activarla). */
+    @Column(name = "prueba_gratuita_usada")
+    private Boolean pruebaGratuitaUsada;
+
+    @Column(name = "stripe_customer_id", length = 255)
+    private String stripeCustomerId;
+
+    @Column(name = "stripe_subscription_id", length = 255)
+    private String stripeSubscriptionId;
+
+    /** Momento en que el usuario solicitó cancelar su inscripción (cuenta pasada a inactiva sin borrar datos). */
+    @Column(name = "fecha_solicitud_baja")
+    private LocalDateTime fechaSolicitudBaja;
+
+    /** Motivo opcional declarado en la solicitud de baja. */
+    @Column(name = "motivo_solicitud_baja", length = 2000)
+    private String motivoSolicitudBaja;
 }

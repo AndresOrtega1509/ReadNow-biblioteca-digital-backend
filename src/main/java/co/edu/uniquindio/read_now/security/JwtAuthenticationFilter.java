@@ -1,5 +1,9 @@
 package co.edu.uniquindio.read_now.security;
 
+import co.edu.uniquindio.read_now.dto.response.MensajeResponseDTO;
+import co.edu.uniquindio.read_now.model.Usuario;
+import co.edu.uniquindio.read_now.repository.IUsuarioRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +24,8 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final IUsuarioRepository usuarioRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -38,6 +44,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (jwtUtil.isTokenValid(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
             String email = jwtUtil.getEmailFromToken(token);
             String rol = jwtUtil.getRolFromToken(token);
+
+            Usuario usuario = usuarioRepository.findByEmail(email).orElse(null);
+            if (usuario == null) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write(objectMapper.writeValueAsString(
+                        new MensajeResponseDTO(false, "Sesión inválida. Vuelve a iniciar sesión.")));
+                return;
+            }
+            if (!"S".equals(usuario.getActivo())) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write(objectMapper.writeValueAsString(
+                        new MensajeResponseDTO(false, "La cuenta se encuentra desactivada")));
+                return;
+            }
 
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                     email,

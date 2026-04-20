@@ -20,4 +20,12 @@ public class Suscripcion {
     private int duracion;
     private double precio;
 
+    /** MENSUAL, SEMESTRAL, ANUAL — identificador estable para checkout y webhooks. */
+    @Column(name = "codigo_plan", unique = true, length = 32)
+    private String codigoPlan;
+
+    /** ID de Price en Stripe (price_...); vacío hasta configurar en Dashboard. */
+    @Column(name = "stripe_price_id", length = 128)
+    private String stripePriceId;
+
 }

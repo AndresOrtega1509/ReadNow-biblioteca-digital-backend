@@ -1,5 +1,6 @@
 package co.edu.uniquindio.read_now.config;
 
+import co.edu.uniquindio.read_now.audit.AuditJdbcContextFilter;
 import co.edu.uniquindio.read_now.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -28,6 +29,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final AuditJdbcContextFilter auditJdbcContextFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -47,8 +49,15 @@ public class SecurityConfig {
                         // Swagger
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
 
+                        // Stripe: webhook sin JWT (firma Stripe-Signature); clave publicable para el front
+                        .requestMatchers(HttpMethod.POST, "/api/payments/stripe/webhook").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/payments/stripe/config").permitAll()
+
                         // Admin
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // Moderación: solo ADMIN puede borrar reseñas (una sola ruta /api/resenias/{id})
+                        .requestMatchers(HttpMethod.DELETE, "/api/resenias/*").hasRole("ADMIN")
 
                         // Catálogo autenticado
                         .requestMatchers(HttpMethod.GET, "/api/catalogo/**").authenticated()
@@ -58,8 +67,8 @@ public class SecurityConfig {
 
                         .anyRequest().permitAll()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(auditJdbcContextFilter, JwtAuthenticationFilter.class);
         return http.build();
     }
 
@@ -81,7 +90,8 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of(
                 "http://34.135.175.245",
                 "http://localhost:80",
-                "http://localhost:4200"
+                "http://localhost:4200",
+                "http://127.0.0.1:4200"
         ));
 
         config.setAllowedMethods(List.of(
