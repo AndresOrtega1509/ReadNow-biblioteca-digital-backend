@@ -1,13 +1,16 @@
 package co.edu.uniquindio.read_now.config;
 
 import co.edu.uniquindio.read_now.model.CategoriaRecurso;
+import co.edu.uniquindio.read_now.model.PlanSuscripcionCodigo;
 import co.edu.uniquindio.read_now.model.Recurso;
 import co.edu.uniquindio.read_now.model.Rol;
+import co.edu.uniquindio.read_now.model.Suscripcion;
 import co.edu.uniquindio.read_now.model.TipoRecurso;
 import co.edu.uniquindio.read_now.model.Usuario;
 import co.edu.uniquindio.read_now.repository.ICategoriaRecursoRepository;
 import co.edu.uniquindio.read_now.repository.IRecursoRepository;
 import co.edu.uniquindio.read_now.repository.IRolRepository;
+import co.edu.uniquindio.read_now.repository.ISuscripcionRepository;
 import co.edu.uniquindio.read_now.repository.ITipoRecursoRepository;
 import co.edu.uniquindio.read_now.repository.IUsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,8 @@ public class DataInitializer implements CommandLineRunner {
 
     private final IRolRepository rolRepository;
     private final IUsuarioRepository usuarioRepository;
+    private final ISuscripcionRepository suscripcionRepository;
+    private final StripeProperties stripeProperties;
     private final ITipoRecursoRepository tipoRecursoRepository;
     private final ICategoriaRecursoRepository categoriaRecursoRepository;
     private final IRecursoRepository recursoRepository;
@@ -42,10 +47,61 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         crearRoles();
         crearAdministrador();
+        asegurarPlanesSuscripcion();
         configurarPruebaSuscripcion();
         crearTiposRecurso();
         crearCategorias();
         crearRecursosIniciales();
+    }
+
+    /** Planes de pago (COP) y vínculo opcional a Stripe Price IDs desde configuración. */
+    private void asegurarPlanesSuscripcion() {
+        upsertPlan(PlanSuscripcionCodigo.MENSUAL, "Plan mensual", "Acceso al catálogo por 1 mes.", 1, 20_000,
+                blankToNull(stripeProperties.getPriceMensual()));
+        upsertPlan(PlanSuscripcionCodigo.SEMESTRAL, "Plan semestral", "Acceso al catálogo por 6 meses.", 6, 80_000,
+                blankToNull(stripeProperties.getPriceSemestral()));
+        upsertPlan(PlanSuscripcionCodigo.ANUAL, "Plan anual", "Acceso al catálogo por 12 meses.", 12, 120_000,
+                blankToNull(stripeProperties.getPriceAnual()));
+    }
+
+    private static String blankToNull(String s) {
+        return (s == null || s.isBlank()) ? null : s.trim();
+    }
+
+    private void upsertPlan(String codigo, String nombre, String descripcion, int duracionMeses, double precioCop,
+                            String stripePriceIdRaw) {
+        Suscripcion plan = suscripcionRepository.findByCodigoPlan(codigo).orElseGet(() ->
+                Suscripcion.builder().codigoPlan(codigo).build());
+        plan.setNombre(nombre);
+        plan.setDescripcion(descripcion);
+        plan.setDuracion(duracionMeses);
+        plan.setPrecio(precioCop);
+        String stripePriceId = validStripePriceIdOrNull(stripePriceIdRaw, codigo);
+        plan.setStripePriceId(stripePriceId);
+        suscripcionRepository.save(plan);
+        log.info("Plan suscripción '{}' sincronizado (Stripe price: {})", codigo,
+                stripePriceId != null ? "sí" : "pendiente de configurar");
+    }
+
+    /** Stripe Checkout solo acepta IDs price_..., no montos numéricos. */
+    private static String validStripePriceIdOrNull(String raw, String codigoPlan) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        String id = raw.trim();
+        if (id.startsWith("price_")) {
+            return id;
+        }
+        if (id.startsWith("prod_")) {
+            log.warn(
+                    "Plan {}: copiaste el ID del producto ({}). Checkout necesita el ID del precio (price_...): en Stripe abre el producto, sección Precios, y copia el ID del precio recurrente.",
+                    codigoPlan, id);
+        } else {
+            log.warn(
+                    "Plan {}: app.stripe.price-* debe ser price_... (precio recurrente en Stripe), no un monto ni otro ID. Valor ignorado: {}",
+                    codigoPlan, id);
+        }
+        return null;
     }
 
     /** Prueba: usuario "prueba" (Juan Pérez) con suscripción que vence en 2 minutos. */
@@ -95,6 +151,7 @@ public class DataInitializer implements CommandLineRunner {
                     .activo("S")
                     .ultimoAcceso(LocalDateTime.now())
                     .rol(rolAdmin)
+                    .pruebaGratuitaUsada(false)
                     .build();
 
             usuarioRepository.save(admin);

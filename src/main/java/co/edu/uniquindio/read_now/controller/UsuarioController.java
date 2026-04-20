@@ -2,6 +2,7 @@ package co.edu.uniquindio.read_now.controller;
 
 import co.edu.uniquindio.read_now.dto.request.ActualizarPerfilRequestDTO;
 import co.edu.uniquindio.read_now.dto.request.CambiarPasswordRequestDTO;
+import co.edu.uniquindio.read_now.dto.request.SolicitudBajaPlataformaRequestDTO;
 import co.edu.uniquindio.read_now.dto.request.VerificacionDosPasosRequestDTO;
 import co.edu.uniquindio.read_now.dto.response.MensajeResponseDTO;
 import co.edu.uniquindio.read_now.dto.response.UsuarioResponseDTO;
@@ -60,6 +61,16 @@ public class UsuarioController {
                                                                              @RequestBody VerificacionDosPasosRequestDTO request) {
         Long usuarioId = getUsuarioId(httpRequest);
         return ResponseEntity.ok(usuarioService.actualizarVerificacionDosPasos(usuarioId, request.activo()));
+    }
+
+    @PostMapping("/cuenta/solicitud-baja")
+    @Operation(summary = "Solicitud de baja de la plataforma",
+            description = "Desactiva la cuenta (activo = N) sin borrar datos. Motivo opcional.")
+    public ResponseEntity<MensajeResponseDTO> solicitudBajaPlataforma(HttpServletRequest httpRequest,
+                                                                      @Valid @RequestBody(required = false) SolicitudBajaPlataformaRequestDTO request) {
+        Long usuarioId = getUsuarioId(httpRequest);
+        SolicitudBajaPlataformaRequestDTO body = request != null ? request : new SolicitudBajaPlataformaRequestDTO(null);
+        return ResponseEntity.ok(usuarioService.solicitarBajaPlataforma(usuarioId, body));
     }
 
     private Long getUsuarioId(HttpServletRequest request) {

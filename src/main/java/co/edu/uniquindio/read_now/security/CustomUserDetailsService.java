@@ -23,10 +23,11 @@ public class CustomUserDetailsService implements UserDetailsService {
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email: " + email));
 
-        return new User(
-                usuario.getEmail(),
-                usuario.getPassword(),
-                List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getRol().getNombre().toUpperCase()))
-        );
+        return User.builder()
+                .username(usuario.getEmail())
+                .password(usuario.getPassword())
+                .disabled(!"S".equals(usuario.getActivo()))
+                .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getRol().getNombre().toUpperCase())))
+                .build();
     }
 }

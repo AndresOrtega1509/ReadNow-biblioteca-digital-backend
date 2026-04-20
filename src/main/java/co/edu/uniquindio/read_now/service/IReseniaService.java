@@ -10,4 +10,7 @@ public interface IReseniaService {
     ReseniaResponseDTO crearResenia(ReseniaRequestDTO request, Long usuarioId);
 
     List<ReseniaResponseDTO> obtenerReseniasPorRecurso(Long recursoId);
+
+    /** Solo administradores (validado en el controlador). */
+    void eliminarReseniaComoAdmin(Long reseniaId);
 }

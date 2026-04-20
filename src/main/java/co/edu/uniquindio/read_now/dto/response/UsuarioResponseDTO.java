@@ -16,5 +16,10 @@ public record UsuarioResponseDTO(
         LocalDate finSuscripcion,
         LocalDateTime finSuscripcionAt,
         boolean suscripcionActiva,
-        Boolean twoFactorActivo
+        boolean puedeActivarPruebaGratuita,
+        Boolean twoFactorActivo,
+        /** Nombre del plan de pago, o "Prueba gratuita" si hay acceso sin plan asignado. Null si no aplica. */
+        String nombrePlanSuscripcion,
+        /** True si la cuenta está habilitada para ingresar ({@code activo == "S"}). */
+        boolean cuentaActiva
 ) {}

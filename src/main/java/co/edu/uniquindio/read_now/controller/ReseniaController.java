@@ -38,6 +38,13 @@ public class ReseniaController {
         return ResponseEntity.ok(reseniaService.obtenerReseniasPorRecurso(recursoId));
     }
 
+    @DeleteMapping("/{reseniaId}")
+    @Operation(summary = "Eliminar reseña (admin)", description = "Permite al administrador eliminar cualquier reseña de un recurso")
+    public ResponseEntity<Void> eliminarReseniaComoAdmin(@PathVariable Long reseniaId) {
+        reseniaService.eliminarReseniaComoAdmin(reseniaId);
+        return ResponseEntity.noContent().build();
+    }
+
     private Long getUsuarioId(HttpServletRequest request) {
         String token = request.getHeader("Authorization").substring(7);
         return jwtUtil.getUsuarioIdFromToken(token);

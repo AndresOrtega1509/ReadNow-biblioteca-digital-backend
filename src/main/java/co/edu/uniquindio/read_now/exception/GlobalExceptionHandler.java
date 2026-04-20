@@ -10,6 +10,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.stream.Collectors;
@@ -36,6 +37,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new MensajeResponseDTO(false, msg != null ? msg : "Error de integridad de datos"));
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<MensajeResponseDTO> handleResponseStatus(ResponseStatusException ex) {
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+        log.warn("HTTP {}: {}", status.value(), ex.getReason());
+        return ResponseEntity
+                .status(status)
+                .body(new MensajeResponseDTO(false, ex.getReason() != null ? ex.getReason() : status.getReasonPhrase()));
     }
 
     @ExceptionHandler(RuntimeException.class)

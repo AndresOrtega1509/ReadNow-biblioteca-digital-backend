@@ -119,6 +119,21 @@
             <artifactId>firebase-admin</artifactId>
             <version>9.4.1</version>
         </dependency>
+        <!-- Metricas con prometheus -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <!-- Pagos (Stripe, modo test / producción según claves) -->
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>28.2.0</version>
+        </dependency>
     </dependencies>
 
     <build>

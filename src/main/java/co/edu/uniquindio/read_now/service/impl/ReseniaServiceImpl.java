@@ -66,4 +66,13 @@ public class ReseniaServiceImpl implements IReseniaService {
                 ))
                 .toList();
     }
+
+    @Override
+    @Transactional
+    public void eliminarReseniaComoAdmin(Long reseniaId) {
+        int filas = reseniaRepository.deleteByReseniaId(reseniaId);
+        if (filas == 0) {
+            throw new RuntimeException("Reseña no encontrada");
+        }
+    }
 }
