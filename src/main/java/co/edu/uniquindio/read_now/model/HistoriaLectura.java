@@ -31,4 +31,16 @@ public class HistoriaLectura {
 
     @Column(name = "fecha_lectura")
     private LocalDateTime fechaLectura;
+
+    /** Última página vista (1-based). Null si aún no se ha registrado progreso desde el visor. */
+    @Column(name = "ultima_pagina")
+    private Integer ultimaPagina;
+
+    /** Total de páginas del PDF cuando se conoce (p. ej. al cargar el documento). */
+    @Column(name = "total_paginas")
+    private Integer totalPaginas;
+
+    /** Resaltados y anotaciones del visor PDF (JSON de ngx-extended-pdf-viewer, sin IDs). */
+    @Column(name = "resaltados_json", columnDefinition = "TEXT")
+    private String resaltadosJson;
 }

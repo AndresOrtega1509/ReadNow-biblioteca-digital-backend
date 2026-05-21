@@ -1,11 +1,7 @@
 package co.edu.uniquindio.read_now.dto.request;
 
-import jakarta.validation.constraints.Size;
-
 /**
- * Solicitud del usuario para cancelar su inscripción: desactiva la cuenta sin eliminar datos.
+ * Solicitud del usuario para desactivar la cuenta sin eliminar datos.
+ * El cuerpo puede ir vacío {@code {}}.
  */
-public record SolicitudBajaPlataformaRequestDTO(
-        @Size(max = 2000, message = "El motivo no puede superar 2000 caracteres")
-        String motivo
-) {}
+public record SolicitudBajaPlataformaRequestDTO() {}

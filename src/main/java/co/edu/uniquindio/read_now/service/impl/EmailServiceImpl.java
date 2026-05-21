@@ -21,6 +21,9 @@ public class EmailServiceImpl implements IEmailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
+    @Value("${app.frontend.url:http://localhost:4200}")
+    private String frontendUrl;
+
     @Async // Opcional pero recomendado
     @Override
     public void enviarCodigoVerificacion(String email, String nombre, String codigo) {
@@ -106,7 +109,7 @@ public class EmailServiceImpl implements IEmailService {
 
     @Async
     @Override
-    public void enviarCorreoInactividad(String email, String nombre) {
+    public void enviarCorreoInactividad(String email, String nombre, int diasInactividad) {
 
         String asunto = "ReadNow - ¡Te extrañamos!";
 
@@ -114,7 +117,7 @@ public class EmailServiceImpl implements IEmailService {
                 <html>
                 <body style="font-family: Arial, sans-serif; padding: 20px;">
                     <h2 style="color: #2c3e50;">Hola %s,</h2>
-                    <p>Hemos notado que no has visitado ReadNow en los últimos días.</p>
+                    <p>Hemos notado que no has visitado ReadNow en más de %d días.</p>
                     <p>Tenemos nuevos recursos esperando por ti. ¡No te pierdas las últimas
                        novedades de nuestro catálogo!</p>
                     <p style="margin-top: 20px;">
@@ -124,7 +127,7 @@ public class EmailServiceImpl implements IEmailService {
                     <p style="color: #95a5a6; font-size: 12px;">ReadNow - Biblioteca Digital</p>
                 </body>
                 </html>
-                """.formatted(nombre);
+                """.formatted(nombre, diasInactividad);
 
         enviarCorreo(email, asunto, contenido);
     }
@@ -176,6 +179,133 @@ public class EmailServiceImpl implements IEmailService {
                 """.formatted(nombre, diasTexto);
 
         enviarCorreo(email, asunto, contenido);
+    }
+
+    @Async
+    @Override
+    public void enviarPqrRecibidaLector(String email, String nombre, Long pqrId, String asunto) {
+        String link = frontendUrl + "/pqr";
+        String asuntoCorreo = "ReadNow - Tu PQR #" + pqrId + " fue registrada";
+        String contenido = plantillaPqr("""
+                <h2 style="color: #2c3e50;">Hola %s,</h2>
+                <p>Hemos recibido tu solicitud <strong>#%d</strong> con asunto <em>%s</em>.</p>
+                <p>Estado actual: <strong>Abierta</strong>. Te notificaremos por correo cuando haya novedades.</p>
+                <p style="margin: 24px 0;">
+                    <a href="%s" style="background-color: #6c5ce7; color: white; padding: 12px 24px; text-decoration: none;
+                       border-radius: 8px; font-weight: bold; display: inline-block;">Ver mis PQRs</a>
+                </p>
+                """.formatted(nombre, pqrId, escaparHtml(asunto), link));
+        enviarCorreo(email, asuntoCorreo, contenido);
+    }
+
+    @Async
+    @Override
+    public void enviarPqrNuevaAdmin(String email, String nombreAdmin, Long pqrId, String asunto, String tipo,
+                                    String lectorNombre, String lectorEmail, String descripcion) {
+        String link = frontendUrl + "/admin/pqr";
+        String asuntoCorreo = "ReadNow - Nueva PQR #" + pqrId + " (" + tipo + ")";
+        String descCorta = descripcion.length() > 400 ? descripcion.substring(0, 400) + "…" : descripcion;
+        String contenido = plantillaPqr("""
+                <h2 style="color: #2c3e50;">Hola %s,</h2>
+                <p>Se registró una nueva PQR que requiere gestión:</p>
+                <ul style="line-height: 1.6;">
+                    <li><strong>ID:</strong> #%d</li>
+                    <li><strong>Tipo:</strong> %s</li>
+                    <li><strong>Asunto:</strong> %s</li>
+                    <li><strong>Lector:</strong> %s (%s)</li>
+                </ul>
+                <p style="background: #f4f4f5; padding: 12px; border-radius: 8px;">%s</p>
+                <p style="margin: 24px 0;">
+                    <a href="%s" style="background-color: #6c5ce7; color: white; padding: 12px 24px; text-decoration: none;
+                       border-radius: 8px; font-weight: bold; display: inline-block;">Gestionar PQRs</a>
+                </p>
+                """.formatted(
+                nombreAdmin, pqrId, tipo, escaparHtml(asunto), escaparHtml(lectorNombre),
+                escaparHtml(lectorEmail), escaparHtml(descCorta), link));
+        enviarCorreo(email, asuntoCorreo, contenido);
+    }
+
+    @Async
+    @Override
+    public void enviarPqrCambioEstadoLector(String email, String nombre, Long pqrId, String asunto,
+                                            String estadoAnterior, String estadoNuevo, String mensajeAdmin) {
+        String link = frontendUrl + "/pqr";
+        String asuntoCorreo = "ReadNow - Actualización PQR #" + pqrId;
+        String bloqueMensaje = (mensajeAdmin != null && !mensajeAdmin.isBlank())
+                ? "<p style=\"background: #f4f4f5; padding: 12px; border-radius: 8px;\"><strong>Mensaje del equipo:</strong><br/>"
+                + escaparHtml(mensajeAdmin) + "</p>"
+                : "";
+        String contenido = plantillaPqr("""
+                <h2 style="color: #2c3e50;">Hola %s,</h2>
+                <p>Tu PQR <strong>#%d</strong> (<em>%s</em>) cambió de estado:</p>
+                <p><strong>%s</strong> → <strong>%s</strong></p>
+                %s
+                <p style="margin: 24px 0;">
+                    <a href="%s" style="background-color: #6c5ce7; color: white; padding: 12px 24px; text-decoration: none;
+                       border-radius: 8px; font-weight: bold; display: inline-block;">Ver detalle</a>
+                </p>
+                """.formatted(
+                nombre, pqrId, escaparHtml(asunto), estadoAnterior, estadoNuevo, bloqueMensaje, link));
+        enviarCorreo(email, asuntoCorreo, contenido);
+    }
+
+    @Async
+    @Override
+    public void enviarPqrRespuestaAdminLector(String email, String nombre, Long pqrId, String asunto, String mensaje) {
+        String link = frontendUrl + "/pqr";
+        String asuntoCorreo = "ReadNow - Respuesta a tu PQR #" + pqrId;
+        String contenido = plantillaPqr("""
+                <h2 style="color: #2c3e50;">Hola %s,</h2>
+                <p>El equipo de ReadNow respondió tu PQR <strong>#%d</strong> (<em>%s</em>):</p>
+                <p style="background: #f4f4f5; padding: 12px; border-radius: 8px;">%s</p>
+                <p style="margin: 24px 0;">
+                    <a href="%s" style="background-color: #6c5ce7; color: white; padding: 12px 24px; text-decoration: none;
+                       border-radius: 8px; font-weight: bold; display: inline-block;">Ver conversación</a>
+                </p>
+                """.formatted(nombre, pqrId, escaparHtml(asunto), escaparHtml(mensaje), link));
+        enviarCorreo(email, asuntoCorreo, contenido);
+    }
+
+    @Async
+    @Override
+    public void enviarPqrMensajeLectorAdmin(String email, String nombreAdmin, Long pqrId, String asunto,
+                                            String lectorNombre, String mensaje) {
+        String link = frontendUrl + "/admin/pqr";
+        String asuntoCorreo = "ReadNow - Nuevo mensaje en PQR #" + pqrId;
+        String contenido = plantillaPqr("""
+                <h2 style="color: #2c3e50;">Hola %s,</h2>
+                <p><strong>%s</strong> escribió en la PQR <strong>#%d</strong> (<em>%s</em>):</p>
+                <p style="background: #f4f4f5; padding: 12px; border-radius: 8px;">%s</p>
+                <p style="margin: 24px 0;">
+                    <a href="%s" style="background-color: #6c5ce7; color: white; padding: 12px 24px; text-decoration: none;
+                       border-radius: 8px; font-weight: bold; display: inline-block;">Responder en el panel</a>
+                </p>
+                """.formatted(
+                nombreAdmin, escaparHtml(lectorNombre), pqrId, escaparHtml(asunto), escaparHtml(mensaje), link));
+        enviarCorreo(email, asuntoCorreo, contenido);
+    }
+
+    private static String plantillaPqr(String cuerpo) {
+        return """
+                <html>
+                <body style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                %s
+                <hr>
+                <p style="color: #95a5a6; font-size: 12px;">ReadNow - Biblioteca Digital</p>
+                </body>
+                </html>
+                """.formatted(cuerpo);
+    }
+
+    private static String escaparHtml(String texto) {
+        if (texto == null) {
+            return "";
+        }
+        return texto
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
     }
 
     private void enviarCorreo(String to, String subject, String htmlContent) {

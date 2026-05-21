@@ -27,6 +27,12 @@ public interface IUsuarioRepository extends JpaRepository<Usuario, Long> {
     List<Usuario> findByUltimoAccesoBeforeAndActivoAndRolNombre(
             LocalDateTime fecha, String activo, String rolNombre);
 
+    /** Lectores activos inactivos desde {@code fechaLimite} que aún no recibieron el recordatorio único. */
+    @Query("SELECT u FROM Usuario u WHERE u.rol.nombre = 'LECTOR' AND u.activo = 'S' "
+            + "AND u.ultimoAcceso IS NOT NULL AND u.ultimoAcceso < :fechaLimite "
+            + "AND (u.recordatorioInactividadEnviado IS NULL OR u.recordatorioInactividadEnviado = false)")
+    List<Usuario> findLectoresInactivosSinRecordatorio(@Param("fechaLimite") LocalDateTime fechaLimite);
+
     /** Suscripciones activas: considera finSuscripcionAt si existe, sino finSuscripcion. */
     @Query("SELECT COUNT(u) FROM Usuario u WHERE " +
             "(u.finSuscripcionAt IS NOT NULL AND u.finSuscripcionAt > :ahora) OR " +
@@ -93,4 +99,6 @@ public interface IUsuarioRepository extends JpaRepository<Usuario, Long> {
             "AND ((u.finSuscripcionAt IS NOT NULL AND u.finSuscripcionAt <= :ahora) OR " +
             "(u.finSuscripcionAt IS NULL AND u.finSuscripcion IS NOT NULL AND u.finSuscripcion < :hoy))")
     List<Usuario> findLectoresConSuscripcionVencidaNoNotificados(@Param("hoy") LocalDate hoy, @Param("ahora") LocalDateTime ahora);
+
+    List<Usuario> findByRol_NombreAndActivo(String nombre, String activo);
 }

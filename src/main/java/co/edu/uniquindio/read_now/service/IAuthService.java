@@ -14,6 +14,9 @@ public interface IAuthService {
 
     LoginResultDTO login(LoginRequestDTO request);
 
+    /** Reactiva cuenta inactiva con el mismo correo y contraseña; luego mismo flujo que login (2FA o token). */
+    LoginResultDTO reactivarCuenta(LoginRequestDTO request);
+
     LoginResponseDTO verificarCodigo(VerificacionCodigoRequestDTO request);
 
     RecuperarPasswordResponseDTO recuperarPassword(RecuperarPasswordRequestDTO request);

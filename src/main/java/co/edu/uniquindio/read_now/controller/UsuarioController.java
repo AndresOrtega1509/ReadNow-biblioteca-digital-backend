@@ -65,11 +65,11 @@ public class UsuarioController {
 
     @PostMapping("/cuenta/solicitud-baja")
     @Operation(summary = "Solicitud de baja de la plataforma",
-            description = "Desactiva la cuenta (activo = N) sin borrar datos. Motivo opcional.")
+            description = "Desactiva la cuenta (activo = N) sin borrar datos. Cuerpo opcional vacío {}.")
     public ResponseEntity<MensajeResponseDTO> solicitudBajaPlataforma(HttpServletRequest httpRequest,
-                                                                      @Valid @RequestBody(required = false) SolicitudBajaPlataformaRequestDTO request) {
+                                                                      @RequestBody(required = false) SolicitudBajaPlataformaRequestDTO request) {
         Long usuarioId = getUsuarioId(httpRequest);
-        SolicitudBajaPlataformaRequestDTO body = request != null ? request : new SolicitudBajaPlataformaRequestDTO(null);
+        SolicitudBajaPlataformaRequestDTO body = request != null ? request : new SolicitudBajaPlataformaRequestDTO();
         return ResponseEntity.ok(usuarioService.solicitarBajaPlataforma(usuarioId, body));
     }
 

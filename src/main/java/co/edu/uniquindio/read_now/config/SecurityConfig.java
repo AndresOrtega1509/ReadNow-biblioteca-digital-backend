@@ -103,7 +103,13 @@ public class SecurityConfig {
         ));
 
         config.setAllowedHeaders(List.of("*"));
-        config.setExposedHeaders(List.of("Authorization"));
+        config.setExposedHeaders(List.of(
+                "Authorization",
+                "Content-Range",
+                "Accept-Ranges",
+                "Content-Length",
+                "Content-Type"
+        ));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source =

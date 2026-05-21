@@ -241,8 +241,10 @@ public class ChatbotServiceImpl implements IChatbotService {
             if (fin != null) {
                 sb.append("La vigencia actual termina el ").append(fin).append(". ");
             }
+        } else if (!p.haTenidoSuscripcion()) {
+            sb.append("Aún no has activado la prueba gratuita ni un plan de pago. ");
         } else {
-            sb.append("No tienes un periodo de acceso activo como lector en este momento. ");
+            sb.append("Tu periodo de acceso como lector ha vencido. ");
             String fin = formatearFinAcceso(p);
             if (fin != null) {
                 sb.append("El fin del último periodo registrado fue el ").append(fin).append(". ");

@@ -8,10 +8,13 @@ import co.edu.uniquindio.read_now.service.IUsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -36,13 +39,6 @@ public class CatalogoController {
     public ResponseEntity<List<RecursoResponseDTO>> listarRecursos(HttpServletRequest request) {
         verificarAccesoCatalogo(request);
         return ResponseEntity.ok(recursoService.listarRecursos());
-    }
-
-    @GetMapping("/recursos/{id}")
-    @Operation(summary = "Obtener recurso", description = "Obtiene los detalles de un recurso específico")
-    public ResponseEntity<RecursoResponseDTO> obtenerRecurso(@PathVariable Long id, HttpServletRequest request) {
-        verificarAccesoCatalogo(request);
-        return ResponseEntity.ok(recursoService.obtenerRecurso(id));
     }
 
     @GetMapping("/recursos/buscar")
@@ -71,5 +67,31 @@ public class CatalogoController {
     public ResponseEntity<List<RecursoResponseDTO>> mejorCalificados(HttpServletRequest request) {
         verificarAccesoCatalogo(request);
         return ResponseEntity.ok(recursoService.obtenerMejorCalificados());
+    }
+
+    @GetMapping("/recursos/recomendados")
+    @Operation(summary = "Recomendados para ti", description = "Sugerencias según categorías, tipos y autores de tu historial de lectura")
+    public ResponseEntity<List<RecursoResponseDTO>> recomendados(HttpServletRequest request) {
+        verificarAccesoCatalogo(request);
+        Long usuarioId = jwtUtil.getUsuarioIdFromToken(request.getHeader("Authorization").substring(7));
+        return ResponseEntity.ok(recursoService.obtenerRecomendados(usuarioId));
+    }
+
+    @GetMapping("/recursos/{id}/archivo")
+    @Operation(summary = "Descargar / transmitir archivo", description = "Proxy del archivo (Firebase) con soporte Range y CORS para el visor PDF en el navegador.")
+    public void streamArchivo(
+            @PathVariable Long id,
+            @RequestHeader(value = HttpHeaders.RANGE, required = false) String range,
+            HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
+        verificarAccesoCatalogo(request);
+        recursoService.streamArchivoRecurso(id, range, response);
+    }
+
+    @GetMapping("/recursos/{id}")
+    @Operation(summary = "Obtener recurso", description = "Obtiene los detalles de un recurso específico")
+    public ResponseEntity<RecursoResponseDTO> obtenerRecurso(@PathVariable Long id, HttpServletRequest request) {
+        verificarAccesoCatalogo(request);
+        return ResponseEntity.ok(recursoService.obtenerRecurso(id));
     }
 }

@@ -16,6 +16,8 @@ public record UsuarioResponseDTO(
         LocalDate finSuscripcion,
         LocalDateTime finSuscripcionAt,
         boolean suscripcionActiva,
+        /** True si alguna vez tuvo prueba gratuita o plan de pago (aunque ya haya vencido). */
+        boolean haTenidoSuscripcion,
         boolean puedeActivarPruebaGratuita,
         Boolean twoFactorActivo,
         /** Nombre del plan de pago, o "Prueba gratuita" si hay acceso sin plan asignado. Null si no aplica. */

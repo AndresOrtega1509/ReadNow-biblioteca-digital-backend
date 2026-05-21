@@ -62,6 +62,10 @@ public class Usuario {
     @Column(name = "recordatorio_1_dia_enviado")
     private Boolean recordatorio1DiaEnviado;
 
+    /** True si ya se envió el único correo de recordatorio por inactividad (3+ días sin acceso). */
+    @Column(name = "recordatorio_inactividad_enviado")
+    private Boolean recordatorioInactividadEnviado;
+
     /** Verificación en dos pasos (2FA): true = activa, false = desactivada. null = usa configuración global. */
     @Column(name = "two_factor_activo")
     private Boolean twoFactorActivo;

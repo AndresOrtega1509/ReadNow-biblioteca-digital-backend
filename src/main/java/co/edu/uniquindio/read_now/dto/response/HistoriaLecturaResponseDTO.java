@@ -7,5 +7,9 @@ public record HistoriaLecturaResponseDTO(
         Long recursoId,
         String nombreRecurso,
         String autorRecurso,
-        LocalDateTime fechaLectura
+        String urlPortada,
+        LocalDateTime fechaLectura,
+        Integer ultimaPagina,
+        Integer totalPaginas,
+        Integer progresoPorcentaje
 ) {}

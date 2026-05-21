@@ -12,9 +12,11 @@ import co.edu.uniquindio.read_now.service.IEmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -105,9 +107,40 @@ public class AuthServiceImpl implements IAuthService {
         }
 
         if (!"S".equals(usuario.getActivo())) {
-            return LoginResultDTO.conMensaje(false, "La cuenta se encuentra desactivada");
+            return LoginResultDTO.conCuentaInactiva(
+                    "Tu cuenta está inactiva. Pulsa «Reactivar cuenta» y confirma con la misma contraseña para volver a usar ReadNow.");
         }
 
+        return continuarLoginTrasCredencialesValidas(usuario);
+    }
+
+    @Override
+    @Transactional
+    public LoginResultDTO reactivarCuenta(LoginRequestDTO request) {
+        Usuario usuario = usuarioRepository.findByEmail(request.email())
+                .orElse(null);
+
+        if (usuario == null || !passwordEncoder.matches(request.password(), usuario.getPassword())) {
+            return LoginResultDTO.conMensaje(false, "Credenciales inválidas");
+        }
+
+        if ("S".equals(usuario.getActivo())) {
+            return LoginResultDTO.conMensaje(false, "Tu cuenta ya está activa. Inicia sesión con el botón habitual.");
+        }
+
+        usuario.setActivo("S");
+        usuario.setFechaSolicitudBaja(null);
+        usuario.setMotivoSolicitudBaja(null);
+        usuarioRepository.save(usuario);
+        log.info("Cuenta reactivada: {}", usuario.getEmail());
+
+        return continuarLoginTrasCredencialesValidas(usuario);
+    }
+
+    /**
+     * Tras validar email y contraseña con cuenta activa (o recién reactivada): token directo o flujo 2FA.
+     */
+    private LoginResultDTO continuarLoginTrasCredencialesValidas(Usuario usuario) {
         boolean usar2FA = twoFactorEnabled && (usuario.getTwoFactorActivo() == null || Boolean.TRUE.equals(usuario.getTwoFactorActivo()));
         if (!usar2FA) {
             usuario.setUltimoAcceso(LocalDateTime.now());
@@ -137,11 +170,11 @@ public class AuthServiceImpl implements IAuthService {
         }
 
         String codigo = generarCodigoVerificacion();
-        codigosVerificacion.put(request.email(),
+        codigosVerificacion.put(usuario.getEmail(),
                 new CodigoVerificacionEntry(codigo, LocalDateTime.now().plusMinutes(5)));
 
-        emailService.enviarCodigoVerificacion(request.email(), usuario.getNombre(), codigo);
-        log.info("Código de verificación enviado a: {}", request.email());
+        emailService.enviarCodigoVerificacion(usuario.getEmail(), usuario.getNombre(), codigo);
+        log.info("Código de verificación enviado a: {}", usuario.getEmail());
 
         return LoginResultDTO.conMensaje(true,
                 "Se ha enviado un código de verificación a tu correo electrónico");
@@ -171,7 +204,8 @@ public class AuthServiceImpl implements IAuthService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         if (!"S".equals(usuario.getActivo())) {
-            throw new RuntimeException("La cuenta se encuentra desactivada");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Tu cuenta está inactiva. Vuelve al inicio de sesión y usa «Reactivar cuenta».");
         }
 
         usuario.setUltimoAcceso(LocalDateTime.now());

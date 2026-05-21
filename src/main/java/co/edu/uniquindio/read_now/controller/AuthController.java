@@ -29,9 +29,20 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Iniciar sesión", description = "Con 2FA: envía código por correo. Sin 2FA (desarrollo): devuelve token directo.")
+    @Operation(summary = "Iniciar sesión", description = "Con 2FA: envía código por correo. Sin 2FA (desarrollo): devuelve token directo. "
+            + "Si la cuenta está inactiva pero la contraseña es correcta, HTTP 200 con cuentaInactiva=true.")
     public ResponseEntity<LoginResultDTO> login(@Valid @RequestBody LoginRequestDTO request) {
         LoginResultDTO response = authService.login(request);
+        if (response.cuentaInactiva()) {
+            return ResponseEntity.ok(response);
+        }
+        return response.exitoso() ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
+    }
+
+    @PostMapping("/reactivar-cuenta")
+    @Operation(summary = "Reactivar cuenta inactiva", description = "Mismo cuerpo que login. Activa la cuenta y devuelve token o inicia 2FA.")
+    public ResponseEntity<LoginResultDTO> reactivarCuenta(@Valid @RequestBody LoginRequestDTO request) {
+        LoginResultDTO response = authService.reactivarCuenta(request);
         return response.exitoso() ? ResponseEntity.ok(response) : ResponseEntity.badRequest().body(response);
     }
 

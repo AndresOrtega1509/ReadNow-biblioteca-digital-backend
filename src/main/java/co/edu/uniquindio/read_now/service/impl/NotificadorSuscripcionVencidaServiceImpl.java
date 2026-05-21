@@ -4,14 +4,12 @@ import co.edu.uniquindio.read_now.model.Usuario;
 import co.edu.uniquindio.read_now.repository.IUsuarioRepository;
 import co.edu.uniquindio.read_now.service.IEmailService;
 import co.edu.uniquindio.read_now.service.INotificadorSuscripcionVencidaService;
+import co.edu.uniquindio.read_now.util.SuscripcionAccesoUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -30,7 +28,8 @@ public class NotificadorSuscripcionVencidaServiceImpl implements INotificadorSus
             if (usuario == null) return;
             if (!"LECTOR".equals(usuario.getRol().getNombre())) return;
             if (Boolean.TRUE.equals(usuario.getSuscripcionVencidaNotificada())) return;
-            if (esSuscripcionActiva(usuario)) return;
+            if (SuscripcionAccesoUtil.esSuscripcionActiva(usuario)) return;
+            if (!SuscripcionAccesoUtil.haTenidoSuscripcion(usuario)) return;
 
             String nombreCompleto = ((usuario.getNombre() != null ? usuario.getNombre() : "") + " "
                     + (usuario.getApellido() != null ? usuario.getApellido() : "")).trim();
@@ -44,15 +43,5 @@ public class NotificadorSuscripcionVencidaServiceImpl implements INotificadorSus
             log.error("Error al notificar suscripción vencida para usuario {}: {}", usuarioId, e.getMessage());
         }
     }
-
-    private boolean esSuscripcionActiva(Usuario usuario) {
-        LocalDateTime ahora = LocalDateTime.now();
-        if (usuario.getFinSuscripcionAt() != null) {
-            return ahora.isBefore(usuario.getFinSuscripcionAt());
-        }
-        return usuario.getFinSuscripcion() != null
-                && !usuario.getFinSuscripcion().isBefore(LocalDate.now());
-    }
-
 
 }

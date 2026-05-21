@@ -9,6 +9,7 @@ import co.edu.uniquindio.read_now.model.Usuario;
 import co.edu.uniquindio.read_now.repository.IUsuarioRepository;
 import co.edu.uniquindio.read_now.service.INotificadorSuscripcionVencidaService;
 import co.edu.uniquindio.read_now.service.IUsuarioService;
+import co.edu.uniquindio.read_now.util.SuscripcionAccesoUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,12 +31,14 @@ public class UsuarioServiceImpl implements IUsuarioService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        boolean suscripcionActiva = esSuscripcionActiva(usuario);
+        boolean suscripcionActiva = SuscripcionAccesoUtil.esSuscripcionActiva(usuario);
+        boolean haTenidoSuscripcion = SuscripcionAccesoUtil.haTenidoSuscripcion(usuario);
         boolean puedePrueba = puedeActivarPruebaGratuita(usuario);
         String nombrePlan = resolverNombrePlanSuscripcion(usuario, suscripcionActiva);
 
-        // Si la suscripción está vencida y no se ha notificado, enviar correo de forma asíncrona
-        if (!suscripcionActiva && !Boolean.TRUE.equals(usuario.getSuscripcionVencidaNotificada())) {
+        if (!suscripcionActiva
+                && haTenidoSuscripcion
+                && !Boolean.TRUE.equals(usuario.getSuscripcionVencidaNotificada())) {
             notificadorSuscripcionVencida.notificarSiCorresponde(usuarioId);
         }
 
@@ -52,6 +55,7 @@ public class UsuarioServiceImpl implements IUsuarioService {
                 usuario.getFinSuscripcion(),
                 usuario.getFinSuscripcionAt(),
                 suscripcionActiva,
+                haTenidoSuscripcion,
                 puedePrueba,
                 usuario.getTwoFactorActivo(),
                 nombrePlan,
@@ -69,17 +73,12 @@ public class UsuarioServiceImpl implements IUsuarioService {
         }
         usuario.setActivo("N");
         usuario.setFechaSolicitudBaja(LocalDateTime.now());
-        if (request.motivo() != null && !request.motivo().isBlank()) {
-            String m = request.motivo().trim();
-            usuario.setMotivoSolicitudBaja(m.length() > 2000 ? m.substring(0, 2000) : m);
-        } else {
-            usuario.setMotivoSolicitudBaja(null);
-        }
+        usuario.setMotivoSolicitudBaja(null);
         usuarioRepository.save(usuario);
         return new MensajeResponseDTO(true,
-                "Solicitud registrada. Tu cuenta quedó desactivada; no eliminamos tus datos. "
-                        + "Si tenías suscripción recurrente con tarjeta, revisa también el portal de pagos para evitar cargos futuros. "
-                        + "Para volver a ingresar más adelante, contacta al soporte de ReadNow.");
+                "Tu cuenta quedó inactiva; no eliminamos tus datos. "
+                        + "Si tenías suscripción recurrente con tarjeta, revisa el portal de pagos para evitar cargos futuros. "
+                        + "Podrás volver a entrar cuando quieras desde el inicio de sesión con «Reactivar cuenta».");
     }
 
     /**
@@ -159,16 +158,7 @@ public class UsuarioServiceImpl implements IUsuarioService {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         if ("ADMIN".equals(usuario.getRol().getNombre())) return true;
-        return esSuscripcionActiva(usuario);
-    }
-
-    private boolean esSuscripcionActiva(Usuario usuario) {
-        LocalDateTime ahora = LocalDateTime.now();
-        if (usuario.getFinSuscripcionAt() != null) {
-            return ahora.isBefore(usuario.getFinSuscripcionAt());
-        }
-        return usuario.getFinSuscripcion() != null
-                && !usuario.getFinSuscripcion().isBefore(LocalDate.now());
+        return SuscripcionAccesoUtil.esSuscripcionActiva(usuario);
     }
 
     /** Prueba gratuita de 15 días: solo lectores, una vez, y si no tienen periodo activo. */
@@ -179,13 +169,13 @@ public class UsuarioServiceImpl implements IUsuarioService {
         if (Boolean.TRUE.equals(usuario.getPruebaGratuitaUsada())) {
             return false;
         }
-        return !esSuscripcionActiva(usuario);
+        return !SuscripcionAccesoUtil.esSuscripcionActiva(usuario);
     }
     @Override
     public boolean tieneSuscripcionActiva(Long usuarioId) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        return esSuscripcionActiva(usuario);
+        return SuscripcionAccesoUtil.esSuscripcionActiva(usuario);
     }
 
 
