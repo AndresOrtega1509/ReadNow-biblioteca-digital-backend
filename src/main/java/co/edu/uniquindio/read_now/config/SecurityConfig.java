@@ -88,7 +88,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowedOrigins(List.of(
-                "http://34.135.175.245",
+                "http://34.135.128.149",
                 "http://localhost:80",
                 "http://localhost:4200",
                 "http://127.0.0.1:4200"
