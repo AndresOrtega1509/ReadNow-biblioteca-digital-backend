@@ -1,2 +1,7 @@
-package co.edu.uniquindio.read_now.dto.request;public class prueba {
+package co.edu.uniquindio.read_now.dto.request;
+
+public class prueba {
+
+    String holaMundo;
+    String prueba2;
 }
