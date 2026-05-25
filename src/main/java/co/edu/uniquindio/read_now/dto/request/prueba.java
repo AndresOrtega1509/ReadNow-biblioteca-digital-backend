@@ -5,4 +5,5 @@ public class prueba {
     String holaMundo;
     String prueba2;
     String prueba3;
+    String prueba4;
 }
