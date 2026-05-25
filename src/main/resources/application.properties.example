@@ -28,7 +28,9 @@ spring.mail.properties.mail.smtp.ssl.trust=smtp.gmail.com
 spring.mail.properties.mail.from=${MAIL_USERNAME}
 
 # FIREBASE
-firebase.credentials.path=firebase-service-account.json
+# Local: firebase-service-account.json en src/main/resources (no subir a Git)
+# Servidor Docker: /config/firebase-service-account.json montado en el contenedor
+firebase.credentials.path=/config/firebase-service-account.json
 firebase.storage.bucket=${FIREBASE_BUCKET}
 
 # SESION

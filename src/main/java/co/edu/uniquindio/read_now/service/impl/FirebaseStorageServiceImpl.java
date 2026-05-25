@@ -4,6 +4,7 @@ import co.edu.uniquindio.read_now.service.IFirebaseStorageService;
 import com.google.cloud.storage.Acl;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Bucket;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.cloud.StorageClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,9 +16,18 @@ import java.io.IOException;
 @Service
 public class FirebaseStorageServiceImpl implements IFirebaseStorageService {
 
+    private static void verificarFirebaseInicializado() {
+        if (FirebaseApp.getApps().isEmpty()) {
+            throw new IllegalStateException(
+                    "Firebase no está configurado en el servidor. "
+                            + "Coloca firebase-service-account.json en /config/ del contenedor "
+                            + "y define firebase.credentials.path=/config/firebase-service-account.json");
+        }
+    }
 
     @Override
     public String subirArchivo(MultipartFile archivo, Long recursoId) {
+        verificarFirebaseInicializado();
         try {
             Bucket bucket = StorageClient.getInstance().bucket();
             String fileName = "librosService/" + recursoId + ".pdf";
@@ -49,6 +59,7 @@ public class FirebaseStorageServiceImpl implements IFirebaseStorageService {
 
     @Override
     public String subirPortada(MultipartFile imagen, Long recursoId) {
+        verificarFirebaseInicializado();
         try {
             Bucket bucket = StorageClient.getInstance().bucket();
             String contentType = imagen.getContentType();

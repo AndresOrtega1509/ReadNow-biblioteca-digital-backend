@@ -15,6 +15,13 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
 
+      - name: Verificar secret de Firebase
+        run: |
+          if [ -z "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" ]; then
+            echo "::error::Agrega el secret FIREBASE_SERVICE_ACCOUNT_JSON en GitHub (Settings → Secrets → Actions) con el contenido completo de firebase-service-account.json"
+            exit 1
+          fi
+
       - name: Configurar Java 21
         uses: actions/setup-java@v4
         with:
@@ -27,13 +34,18 @@ jobs:
       - name: Compilar con Maven
         run: ./mvnw clean package -DskipTests
 
-      - name: Copiar .jar al servidor
+      - name: Preparar credenciales Firebase (solo en el runner, no va al repo)
+        run: |
+          printf '%s' "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}" > firebase-service-account.json
+          chmod 600 firebase-service-account.json
+
+      - name: Copiar .jar y credenciales Firebase al servidor
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "target/*.jar"
+          source: "target/*.jar,firebase-service-account.json"
           target: "/home/${{ secrets.SSH_USER }}/ReadNow-biblioteca-digital-backend"
 
       - name: Desplegar en servidor
@@ -43,13 +55,22 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/ReadNow-biblioteca-digital-backend
+            set -e
+            DEPLOY_DIR="$HOME/ReadNow-biblioteca-digital-backend"
+            cd "$DEPLOY_DIR"
+            if [ ! -f firebase-service-account.json ]; then
+              echo "ERROR: falta firebase-service-account.json en el servidor"
+              exit 1
+            fi
+            chmod 600 firebase-service-account.json
             docker build --no-cache -t readnow-backend .
             docker rm -f backend-readnow || true
             docker run -d \
               --name backend-readnow \
               --network readnow-network \
               -p 8080:8080 \
-              -v /home/scontre001/ReadNow-biblioteca-digital-backend/application.properties:/config/application.properties \
+              -v "$DEPLOY_DIR/application.properties:/config/application.properties:ro" \
+              -v "$DEPLOY_DIR/firebase-service-account.json:/config/firebase-service-account.json:ro" \
+              -e SPRING_CONFIG_ADDITIONAL_LOCATION=optional:file:/config/application.properties \
               --restart always \
               readnow-backend

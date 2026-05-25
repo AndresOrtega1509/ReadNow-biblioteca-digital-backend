@@ -36,3 +36,4 @@ build/
 # Archivos sensibles
 src/main/resources/application.properties
 src/main/resources/firebase-service-account.json
+firebase-service-account.json
