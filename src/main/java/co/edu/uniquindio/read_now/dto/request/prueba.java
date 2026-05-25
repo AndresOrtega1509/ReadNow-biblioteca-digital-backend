@@ -7,6 +7,7 @@ public class prueba {
     String prueba3;
     String prueba4;
     String prueba5;
+    String prueba55;
     String prueba6;
     String prueba;
     String prueba33;
