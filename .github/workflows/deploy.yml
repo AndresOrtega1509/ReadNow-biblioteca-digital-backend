@@ -50,6 +50,6 @@ jobs:
               --name backend-readnow \
               --network readnow-network \
               -p 8080:8080 \
-              -v ~/ReadNow-biblioteca-digital-backend/application.properties:/workspace/config/application.properties \
+              -v /home/scontre001/ReadNow-biblioteca-digital-backend/application.properties:/config/application.properties \
               --restart always \
               readnow-backend
