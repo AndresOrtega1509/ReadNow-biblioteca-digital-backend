@@ -8,6 +8,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout código
@@ -42,9 +44,9 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/ReadNow-biblioteca-digital-backend
-            sudo docker build --no-cache -t readnow-backend .
-            sudo docker rm -f backend-readnow || true
-            sudo docker run -d \
+            docker build --no-cache -t readnow-backend .
+            docker rm -f backend-readnow || true
+            docker run -d \
               --name backend-readnow \
               --network readnow-network \
               -p 8080:8080 \
