@@ -1,0 +1,66 @@
+spring.application.name=app-readNow
+
+# BASE DE DATOS
+spring.datasource.url=${SPRING_DATASOURCE_URL}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+
+# JWT
+jwt.secret=${JWT_SECRET}
+jwt.expiration=86400000
+
+# 2FA
+app.auth.two-factor-enabled=true
+
+# GMAIL SMTP
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=${MAIL_USERNAME}
+spring.mail.password=${MAIL_PASSWORD}
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.properties.mail.smtp.starttls.required=true
+spring.mail.properties.mail.smtp.ssl.trust=smtp.gmail.com
+spring.mail.properties.mail.from=${MAIL_USERNAME}
+
+# FIREBASE
+firebase.credentials.path=firebase-service-account.json
+firebase.storage.bucket=${FIREBASE_BUCKET}
+
+# SESION
+app.session.inactivity-reading-ms=600000
+app.session.inactivity-catalog-ms=120000
+app.session.countdown-ms=60000
+
+# PRUEBA GRATUITA
+app.trial.days=15
+
+# INACTIVIDAD
+app.inactivity.notification-days=3
+
+# RECUPERACION
+app.recuperacion.minutos=15
+app.frontend.url=${APP_FRONTEND_URL}
+
+# ARCHIVOS
+spring.servlet.multipart.max-file-size=50MB
+spring.servlet.multipart.max-request-size=50MB
+
+# ACTUATOR
+management.endpoints.web.exposure.include=health,info,prometheus
+management.endpoint.prometheus.enabled=true
+management.metrics.tags.application=ReadNow
+
+# STRIPE
+app.stripe.secret-key=${STRIPE_SECRET_KEY}
+app.stripe.publishable-key=${STRIPE_PUBLISHABLE_KEY}
+app.stripe.webhook-secret=${STRIPE_WEBHOOK_SECRET}
+app.stripe.success-path=/suscripcion/pago-exitoso
+app.stripe.cancel-path=/suscripcion/pago-cancelado
+app.stripe.price-mensual=${STRIPE_PRICE_MENSUAL}
+app.stripe.price-semestral=${STRIPE_PRICE_SEMESTRAL}
+app.stripe.price-anual=${STRIPE_PRICE_ANUAL}
