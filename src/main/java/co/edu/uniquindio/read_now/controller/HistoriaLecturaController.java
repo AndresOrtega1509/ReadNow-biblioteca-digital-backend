@@ -74,9 +74,6 @@ public class HistoriaLecturaController {
             @Valid @RequestBody LecturaAnotacionesRequestDTO body,
             HttpServletRequest httpRequest) {
         Long usuarioId = getUsuarioId(httpRequest);
-        if (!usuarioService.puedeAccederAlCatalogo(usuarioId)) {
-            throw new SuscripcionVencidaException();
-        }
         MensajeResponseDTO res = historiaLecturaService.guardarAnotaciones(recursoId, usuarioId, body);
         return res.exitoso() ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res);
     }
@@ -88,9 +85,7 @@ public class HistoriaLecturaController {
             @Valid @RequestBody LecturaProgresoRequestDTO body,
             HttpServletRequest httpRequest) {
         Long usuarioId = getUsuarioId(httpRequest);
-        if (!usuarioService.puedeAccederAlCatalogo(usuarioId)) {
-            throw new SuscripcionVencidaException();
-        }
+        // Misma regla que GET progreso/anotaciones: lectura autenticada sin bloquear por suscripción vencida en caliente
         MensajeResponseDTO res = historiaLecturaService.actualizarProgreso(recursoId, usuarioId, body);
         return res.exitoso() ? ResponseEntity.ok(res) : ResponseEntity.badRequest().body(res);
     }

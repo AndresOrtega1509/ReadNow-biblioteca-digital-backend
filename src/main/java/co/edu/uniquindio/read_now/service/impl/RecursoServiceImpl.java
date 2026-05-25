@@ -319,8 +319,8 @@ public class RecursoServiceImpl implements IRecursoService {
 
         java.net.http.HttpHeaders uh = upstream.headers();
         uh.firstValue("Content-Type").ifPresent(response::setContentType);
-        if (response.getContentType() == null) {
-            response.setContentType("application/octet-stream");
+        if (response.getContentType() == null || response.getContentType().isBlank()) {
+            response.setContentType(inferirContentTypeArchivo(fileUrl));
         }
 
         copyClientHeader(uh, response, "Accept-Ranges");
@@ -353,6 +353,21 @@ public class RecursoServiceImpl implements IRecursoService {
             }
             out.flush();
         }
+    }
+
+    private static String inferirContentTypeArchivo(String fileUrl) {
+        if (fileUrl == null) {
+            return "application/octet-stream";
+        }
+        String path = fileUrl;
+        int q = path.indexOf('?');
+        if (q >= 0) {
+            path = path.substring(0, q);
+        }
+        if (path.toLowerCase().endsWith(".pdf")) {
+            return "application/pdf";
+        }
+        return "application/octet-stream";
     }
 
     private static void copyClientHeader(java.net.http.HttpHeaders from, HttpServletResponse to, String name) {
