@@ -10,5 +10,4 @@ public class prueba {
     String prueba6;
     String prueba;
     String prueba33;
-    String prueba334;
 }
