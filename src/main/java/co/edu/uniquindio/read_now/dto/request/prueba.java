@@ -4,4 +4,5 @@ public class prueba {
 
     String holaMundo;
     String prueba2;
+    String prueba3;
 }
