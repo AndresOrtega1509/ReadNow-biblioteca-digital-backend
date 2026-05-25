@@ -50,8 +50,6 @@ jobs:
               --name backend-readnow \
               --network readnow-network \
               -p 8080:8080 \
-              -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql-readnow:3306/readnow_db \
-              -e SPRING_DATASOURCE_USERNAME=root \
-              -e SPRING_DATASOURCE_PASSWORD=PasswordReadNow \
+              -v ~/ReadNow-biblioteca-digital-backend/application.properties:/workspace/config/application.properties \
               --restart always \
               readnow-backend
